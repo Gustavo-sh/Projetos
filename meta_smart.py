@@ -2,7 +2,6 @@ import time
 import pyodbc
 import pandas as pd
 import numpy as np 
-from sqlalchemy import create_engine
 
 BASE = """
     SET NOCOUNT ON
@@ -132,21 +131,6 @@ BASE = """
     drop table #segmentos
     """
 
-# connection_string = (
-#     "mssql+pyodbc://primno4/Robbyson"
-#     "?driver=ODBC+Driver+17+for+SQL+Server"
-#     "&trusted_connection=yes"
-# )
-
-# engine = create_engine(connection_string)
-
-# def get_base():
-
-#     with engine.connect() as conn:
-#         df = pd.read_sql_query(BASE, conn)
-
-#     return df
-
 CONNECTION_STRING = "Driver={SQL Server};Server=primno4;Database=Robbyson;Trusted_Connection=yes;"
 
 def get_base():
@@ -195,31 +179,6 @@ def calc_grupo(ating, g1, g2, g3):
         return 2
     else:
         return 1
-    
-# def calc_p_g1g2(df, meta):
-
-#     grupos = []
-
-#     for _, row in df.iterrows():
-
-#         ating = calc_ating(
-#             row.resultado,
-#             meta,
-#             row.formula_atingimento
-#         )
-
-#         grupo = calc_grupo(
-#             ating,
-#             row.g1,
-#             row.g2,
-#             row.g3
-#         )
-
-#         grupos.append(grupo)
-
-#     grupos = np.array(grupos)
-
-#     return np.mean(grupos <= 2)
 
 def calc_p_g1g2(df, meta):
 
@@ -286,36 +245,6 @@ def calc_p_g1g2(df, meta):
     )
 
     return np.mean(grupo <= 2)
-
-# def encontrar_meta(df):
-
-#     meta = df.meta.iloc[0]
-#     tipo = df.tipo.iloc[0]
-
-#     for _ in range(200):
-
-#         p = calc_p_g1g2(df, meta)
-
-#         if 0.37 <= p <= 0.43:
-#             return meta, p
-
-#         ajuste = meta * 0.02
-
-#         if p < 0.37:
-
-#             if tipo == "Maior Melhor":
-#                 meta -= ajuste
-#             else:
-#                 meta += ajuste
-
-#         elif p > 0.43:
-
-#             if tipo == "Maior Melhor":
-#                 meta += ajuste
-#             else:
-#                 meta -= ajuste
-
-#     return meta, p
 
 def encontrar_meta(df):
 
