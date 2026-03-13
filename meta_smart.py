@@ -1,7 +1,7 @@
 import time
 import pyodbc
 import pandas as pd
-import numpy as np
+import numpy as np 
 from sqlalchemy import create_engine
 
 BASE = """
