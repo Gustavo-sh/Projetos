@@ -259,9 +259,6 @@ def encontrar_meta(df):
     melhor_p = calc_p_g1g2(df, meta_original)
     melhor_erro = abs(melhor_p - 0.40)
 
-    if melhor_p > 0.80:
-        return meta_original, melhor_p
-
     for _ in range(20):  # ~log2(range) → 20 iterações já é muito preciso
 
         meta = (low + high) / 2
@@ -295,12 +292,100 @@ def encontrar_meta(df):
                 high = meta
     return melhor_meta, melhor_p
 
+def calc_ating_medio(df, meta):
+
+    resultado = df["resultado"].to_numpy()
+    formula = df["formula_atingimento"].to_numpy()
+
+    ating = np.zeros_like(resultado, dtype=float)
+
+    # formula 2
+    mask = formula == 2
+    ating[mask] = np.where(resultado[mask] == 0, 10, meta / resultado[mask])
+
+    # formula 3
+    mask = formula == 3
+    cond = (meta == 0) | (resultado[mask] <= 0)
+    ating[mask] = np.where(cond, 0, resultado[mask] / meta)
+
+    # formula 4
+    mask = formula == 4
+    ating[mask] = np.where(
+        resultado[mask] > meta,
+        meta / resultado[mask],
+        resultado[mask] / meta
+    )
+
+    # formula 6
+    mask = formula == 6
+    ating[mask] = np.where(
+        meta == -1,
+        0,
+        (resultado[mask] + 1) / (meta + 1)
+    )
+
+    # formula 7
+    mask = formula == 7
+    ating[mask] = np.where(
+        meta > 0.00001,
+        resultado[mask] / meta,
+        np.where(resultado[mask] == 0, 1, resultado[mask] / meta)
+    )
+
+    # formula 8
+    mask = formula == 8
+    r = resultado[mask] / meta
+    ating[mask] = np.where(r >= 1, 0, r)
+
+    # formula 9
+    mask = formula == 9
+    ating[mask] = np.where(resultado[mask] >= 0, 10, meta / resultado[mask])
+
+    return np.mean(ating)
+
+def encontrar_meta_atingimento(df):
+
+    meta_original = df.meta.iloc[0]
+    tipo = df.tipo.iloc[0]
+
+    low = meta_original * 0.01
+    high = meta_original * 100
+
+    melhor_meta = meta_original
+    melhor_erro = abs(calc_ating_medio(df, meta_original) - 1)
+
+    for _ in range(20):
+
+        meta = (low + high) / 2
+
+        ating = calc_ating_medio(df, meta)
+
+        erro = abs(ating - 1)
+
+        if erro < melhor_erro:
+            melhor_meta = meta
+            melhor_erro = erro
+
+        if 0.98 <= ating <= 1.02:
+            return meta
+
+        if tipo == "Maior Melhor":
+            if ating > 1:
+                low = meta
+            else:
+                high = meta
+        else:
+            if ating > 1:
+                high = meta
+            else:
+                low = meta
+
+    return melhor_meta
+
 def main():
     start_query = time.time()
     df = get_base()
     
-    indice = 0
-
     print("df gerado, query executada em ", (time.time() - start_query))
 
     resultados = []
@@ -308,17 +393,30 @@ def main():
 
     start_for = time.time()
     for (indicador, atributo), grupo in df.groupby(["id_indicador","atributo"]):
-
+        meta_critica = False
         meta_otima, p = encontrar_meta(grupo)
+        if p < 0.20 or p > 0.60:
+            meta_critica = True
+            meta_otima = encontrar_meta_atingimento(grupo)
+            p = calc_p_g1g2(grupo, meta_otima)
 
+        definicao = None
+        if 0.37 <= p <= 0.43:
+            definicao = "otima"
+        elif p > 0.43 and p < 0.60:
+            definicao = "alto aceitavel"
+        elif p <0.37 and p > 0.20:
+            definicao = "baixo aceitavel"
+        else:
+            definicao = "critico estrutural"
         resultados.append({
             "id_indicador": indicador,
             "atributo": atributo,
             "meta_otima": meta_otima,
-            "p_g1g2": p
+            "p_g1g2": p,
+            "tipo_meta": "Atingimento" if meta_critica else "P_G1G2",
+            "definicao": definicao
         })
-        print(f"meta appendada: {meta_otima}, atributo: {atributo}, id: {indicador}, linha atual: {indice}")
-        indice += 1
 
     print("for executado em ", (time.time() - start_for))
     resultado_final = pd.DataFrame(resultados)
