@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np 
 
 BASE = """
-    SET NOCOUNT ON
+    SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
     SELECT atributo, id 
@@ -17,9 +17,14 @@ BASE = """
         when formula_perc_atingimento like '%resultado/meta%' then 'Maior Melhor'
         when formula_perc_atingimento is null then 'Nenhum'
         else 'Maior Melhor' end as tipo
-    INTO #tipos
+    INTO #tipos_mm
     FROM rby.indicador (NOLOCK)
     where formula_perc_atingimento is not null
+
+    select id_indicador, case when formato = 'coin' then 'integer' else formato end as formato 
+    into #tipos_ind
+    from rby_indicador (nolock) 
+    where formato is not null
 
     select distinct id_segmento, chave_externa
     into #hc
@@ -55,6 +60,7 @@ BASE = """
     WHERE data BETWEEN DATEADD(D,1,EOMONTH(GETDATE(),-2)) AND EOMONTH(GETDATE(),-1)
     AND id_segmento in (select id_segmento from #segmentos)
     AND id not in (6,34,15,48,49)
+    and id not in (select id_indicador from rby.indicador (nolock) where formula_meta not like '%fatorCalc%' and formula_meta not like '%meta%' and indicador_nome <> 'Descontinuado')
     AND id not in (select distinct id_indicador from rby.indicador (nolock) where indicador_nome like '%pausa%')
     GROUP BY
         id,
@@ -114,17 +120,21 @@ BASE = """
         g1,
         g2,
         g3,
-        tipo
+        t.tipo,
+        ti.formato
     FROM #base b
     JOIN #atributos a ON b.id_segmento = a.id
     LEFT JOIN dbo.faixa_grupos f 
         ON f.Id_Indicador = b.id_indicador
         AND f.data = EOMONTH(GETDATE(), -1)
-    LEFT JOIN #tipos t
+    LEFT JOIN #tipos_mm t
         ON b.id_indicador = t.id_indicador
+    left join #tipos_ind ti
+        on b.id_indicador = ti.id_indicador
 
     drop table #atributos
-    drop table #tipos
+    drop table #tipos_mm
+    drop table #tipos_ind
     drop table #agg
     drop table #base
     drop table #hc
@@ -398,6 +408,13 @@ def main():
         if p < 0.20 or p > 0.60:
             meta_critica = True
             meta_otima = encontrar_meta_atingimento(grupo)
+            p = calc_p_g1g2(grupo, meta_otima)
+        
+        # 🔹 ajuste de formato da meta
+        formato = grupo.formato.iloc[0]
+
+        if formato == "integer":
+            meta_otima = round(meta_otima)
             p = calc_p_g1g2(grupo, meta_otima)
 
         definicao = None
