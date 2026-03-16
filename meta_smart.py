@@ -259,6 +259,9 @@ def encontrar_meta(df):
     melhor_p = calc_p_g1g2(df, meta_original)
     melhor_erro = abs(melhor_p - 0.40)
 
+    if melhor_p > 0.80:
+        return meta_original, melhor_p
+
     for _ in range(20):  # ~log2(range) → 20 iterações já é muito preciso
 
         meta = (low + high) / 2
@@ -290,7 +293,6 @@ def encontrar_meta(df):
                 low = meta
             else:
                 high = meta
-
     return melhor_meta, melhor_p
 
 def main():
