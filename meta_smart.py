@@ -121,7 +121,9 @@ BASE = """
         g2,
         g3,
         t.tipo,
-        ti.formato
+        ti.formato,
+        faixa_inferior,
+        faixa_superior
     FROM #base b
     JOIN #atributos a ON b.id_segmento = a.id
     LEFT JOIN dbo.faixa_grupos f 
@@ -131,6 +133,8 @@ BASE = """
         ON b.id_indicador = t.id_indicador
     left join #tipos_ind ti
         on b.id_indicador = ti.id_indicador
+    left join faixas_meta_smart fms
+        on b.id_indicador = fms.id
 
     drop table #atributos
     drop table #tipos_mm
@@ -261,45 +265,50 @@ def encontrar_meta(df):
     meta_original = df.meta.iloc[0]
     tipo = df.tipo.iloc[0]
 
-    # intervalo inicial de busca (igual ao comportamento do seu algoritmo)
+    faixa_inf = df.faixa_inferior.iloc[0]
+    faixa_sup = df.faixa_superior.iloc[0]
+    if pd.isna(faixa_inf):
+        faixa_inf = 0.37
+
+    if pd.isna(faixa_sup):
+        faixa_sup = 0.43
+    
+    alvo = (faixa_inf + faixa_sup) / 2
+
     low = meta_original * 0.01
     high = meta_original * 100
 
     melhor_meta = meta_original
     melhor_p = calc_p_g1g2(df, meta_original)
-    melhor_erro = abs(melhor_p - 0.40)
+    melhor_erro = abs(melhor_p - alvo)
 
-    for _ in range(20):  # ~log2(range) → 20 iterações já é muito preciso
+    for _ in range(20):
 
         meta = (low + high) / 2
-
         p = calc_p_g1g2(df, meta)
 
-        erro = abs(p - 0.40)
+        erro = abs(p - alvo)
 
         if erro < melhor_erro:
             melhor_meta = meta
             melhor_p = p
             melhor_erro = erro
 
-        # se entrou na faixa, terminamos
-        if 0.37 <= p <= 0.43:
+        if faixa_inf <= p <= faixa_sup:
             return meta, p
 
-        # mesma lógica de direção do algoritmo original
-        if p < 0.37:
-
+        if p < faixa_inf:
             if tipo == "Maior Melhor":
                 high = meta
             else:
                 low = meta
 
-        elif p > 0.43:
-
+        elif p > faixa_sup:
             if tipo == "Maior Melhor":
                 low = meta
             else:
                 high = meta
+
     return melhor_meta, melhor_p
 
 def calc_ating_medio(df, meta):
@@ -405,7 +414,14 @@ def main():
     for (indicador, atributo), grupo in df.groupby(["id_indicador","atributo"]):
         meta_critica = False
         meta_otima, p = encontrar_meta(grupo)
-        if p < 0.20 or p > 0.60:
+        faixa_inf = grupo.faixa_inferior.iloc[0]
+        faixa_sup = grupo.faixa_superior.iloc[0]
+        if pd.isna(faixa_inf):
+            faixa_inf = 0.37
+
+        if pd.isna(faixa_sup):
+            faixa_sup = 0.43
+        if p < faixa_inf * 0.5 or p > faixa_sup * 1.5:
             meta_critica = True
             meta_otima = encontrar_meta_atingimento(grupo)
             p = calc_p_g1g2(grupo, meta_otima)
@@ -418,11 +434,11 @@ def main():
             p = calc_p_g1g2(grupo, meta_otima)
 
         definicao = None
-        if 0.37 <= p <= 0.43:
+        if faixa_inf <= p <= faixa_sup:
             definicao = "otima"
-        elif p > 0.43 and p < 0.60:
+        elif p > faixa_sup and p < (faixa_sup * 1.5):
             definicao = "alto aceitavel"
-        elif p <0.37 and p > 0.20:
+        elif p < faixa_inf and p > (faixa_inf * 0.5):
             definicao = "baixo aceitavel"
         else:
             definicao = "critico estrutural"
