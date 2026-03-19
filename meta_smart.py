@@ -153,47 +153,6 @@ def get_base():
     conn.close()
     return df
 
-def calc_ating(resultado, meta, formula):
-
-    if formula == 2:
-        return 10 if resultado == 0 else meta / resultado
-
-    if formula == 3:
-        if meta == 0 or resultado <= 0:
-            return 0
-        return resultado / meta
-
-    if formula == 4:
-        return meta / resultado if resultado > meta else resultado / meta
-
-    if formula == 6:
-        return 0 if meta == -1 else (resultado + 1) / (meta + 1)
-
-    if formula == 7:
-        if meta > 0.00001:
-            return resultado / meta
-        return 1 if resultado == 0 else resultado / meta
-
-    if formula == 8:
-        r = resultado / meta
-        return 0 if r >= 1 else r
-
-    if formula == 9:
-        return 10 if resultado >= 0 else meta / resultado
-
-    return 0
-
-def calc_grupo(ating, g1, g2, g3):
-
-    if ating < g3:
-        return 4
-    elif ating < g2:
-        return 3
-    elif ating < g1:
-        return 2
-    else:
-        return 1
-
 def calc_p_g1g2(df, meta):
 
     resultado = df["resultado"].to_numpy()
@@ -204,16 +163,13 @@ def calc_p_g1g2(df, meta):
 
     ating = np.zeros_like(resultado, dtype=float)
 
-    # formula 2
     mask = formula == 2
     ating[mask] = np.where(resultado[mask] == 0, 10, meta / resultado[mask])
 
-    # formula 3
     mask = formula == 3
     cond = (meta == 0) | (resultado[mask] <= 0)
     ating[mask] = np.where(cond, 0, resultado[mask] / meta)
 
-    # formula 4
     mask = formula == 4
     ating[mask] = np.where(
         resultado[mask] > meta,
@@ -221,7 +177,6 @@ def calc_p_g1g2(df, meta):
         resultado[mask] / meta
     )
 
-    # formula 6
     mask = formula == 6
     ating[mask] = np.where(
         meta == -1,
@@ -229,7 +184,6 @@ def calc_p_g1g2(df, meta):
         (resultado[mask] + 1) / (meta + 1)
     )
 
-    # formula 7
     mask = formula == 7
     ating[mask] = np.where(
         meta > 0.00001,
@@ -237,16 +191,13 @@ def calc_p_g1g2(df, meta):
         np.where(resultado[mask] == 0, 1, resultado[mask] / meta)
     )
 
-    # formula 8
     mask = formula == 8
     r = resultado[mask] / meta
     ating[mask] = np.where(r >= 1, 0, r)
 
-    # formula 9
     mask = formula == 9
     ating[mask] = np.where(resultado[mask] >= 0, 10, meta / resultado[mask])
 
-    # cálculo de grupo vetorizado
     grupo = np.where(
         ating < g3, 4,
         np.where(
@@ -260,6 +211,70 @@ def calc_p_g1g2(df, meta):
 
     return np.mean(grupo <= 2)
 
+def calc_ating_medio(df, meta):
+
+    resultado = df["resultado"].to_numpy()
+    formula = df["formula_atingimento"].to_numpy()
+
+    ating = np.zeros_like(resultado, dtype=float)
+
+    mask = formula == 2
+    ating[mask] = np.where(resultado[mask] == 0, 10, meta / resultado[mask])
+
+    mask = formula == 3
+    cond = (meta == 0) | (resultado[mask] <= 0)
+    ating[mask] = np.where(cond, 0, resultado[mask] / meta)
+
+    mask = formula == 4
+    ating[mask] = np.where(
+        resultado[mask] > meta,
+        meta / resultado[mask],
+        resultado[mask] / meta
+    )
+
+    mask = formula == 6
+    ating[mask] = np.where(
+        meta == -1,
+        0,
+        (resultado[mask] + 1) / (meta + 1)
+    )
+
+    mask = formula == 7
+    ating[mask] = np.where(
+        meta > 0.00001,
+        resultado[mask] / meta,
+        np.where(resultado[mask] == 0, 1, resultado[mask] / meta)
+    )
+
+    mask = formula == 8
+    r = resultado[mask] / meta
+    ating[mask] = np.where(r >= 1, 0, r)
+
+    mask = formula == 9
+    ating[mask] = np.where(resultado[mask] >= 0, 10, meta / resultado[mask])
+
+    return np.mean(ating)
+
+def metodo_variacao(df, meta):
+    atingimento = calc_ating_medio(df, meta)
+    tipo = df.tipo.iloc[0]
+    id_indicador = int(df.id_indicador.iloc[0])
+    nova_meta = None
+
+    if tipo == "Maior Melhor":
+        if atingimento >= 1:
+            nova_meta = meta + (meta * 0.03)
+            if id_indicador == 901 and nova_meta > 0.98:
+                nova_meta = 0.98
+            return nova_meta 
+        else:
+            return meta - (meta * 0.03)
+    else:
+        if atingimento >= 1:
+            return meta - (meta * 0.03)
+        else:
+            return meta + (meta * 0.03)
+
 def encontrar_meta(df):
 
     meta_original = df.meta.iloc[0]
@@ -267,35 +282,31 @@ def encontrar_meta(df):
 
     faixa_inf = df.faixa_inferior.iloc[0]
     faixa_sup = df.faixa_superior.iloc[0]
+
     if pd.isna(faixa_inf):
         faixa_inf = 0.37
 
     if pd.isna(faixa_sup):
         faixa_sup = 0.43
-    
-    alvo = (faixa_inf + faixa_sup) / 2
 
+    p_original = calc_p_g1g2(df, meta_original)
+    if faixa_inf <= p_original <= faixa_sup:
+        return meta_original, p_original, "Original", meta_original
+    
     low = meta_original * 0.01
     high = meta_original * 100
-
-    melhor_meta = meta_original
-    melhor_p = calc_p_g1g2(df, meta_original)
-    melhor_erro = abs(melhor_p - alvo)
 
     for _ in range(20):
 
         meta = (low + high) / 2
         p = calc_p_g1g2(df, meta)
 
-        erro = abs(p - alvo)
-
-        if erro < melhor_erro:
-            melhor_meta = meta
-            melhor_p = p
-            melhor_erro = erro
-
         if faixa_inf <= p <= faixa_sup:
-            return meta, p
+            if abs((meta - meta_original) / meta_original) > 0.03:
+                meta_variacao = metodo_variacao(df, meta_original)
+                p_variacao = calc_p_g1g2(df, meta_variacao)
+                return meta_variacao, p_variacao, "Variação", meta_original
+            return meta, p, "P_G1G2", meta_original
 
         if p < faixa_inf:
             if tipo == "Maior Melhor":
@@ -309,97 +320,10 @@ def encontrar_meta(df):
             else:
                 high = meta
 
-    return melhor_meta, melhor_p
+    meta_variacao = metodo_variacao(df, meta_original)
+    p_variacao = calc_p_g1g2(df, meta_variacao)
 
-def calc_ating_medio(df, meta):
-
-    resultado = df["resultado"].to_numpy()
-    formula = df["formula_atingimento"].to_numpy()
-
-    ating = np.zeros_like(resultado, dtype=float)
-
-    # formula 2
-    mask = formula == 2
-    ating[mask] = np.where(resultado[mask] == 0, 10, meta / resultado[mask])
-
-    # formula 3
-    mask = formula == 3
-    cond = (meta == 0) | (resultado[mask] <= 0)
-    ating[mask] = np.where(cond, 0, resultado[mask] / meta)
-
-    # formula 4
-    mask = formula == 4
-    ating[mask] = np.where(
-        resultado[mask] > meta,
-        meta / resultado[mask],
-        resultado[mask] / meta
-    )
-
-    # formula 6
-    mask = formula == 6
-    ating[mask] = np.where(
-        meta == -1,
-        0,
-        (resultado[mask] + 1) / (meta + 1)
-    )
-
-    # formula 7
-    mask = formula == 7
-    ating[mask] = np.where(
-        meta > 0.00001,
-        resultado[mask] / meta,
-        np.where(resultado[mask] == 0, 1, resultado[mask] / meta)
-    )
-
-    # formula 8
-    mask = formula == 8
-    r = resultado[mask] / meta
-    ating[mask] = np.where(r >= 1, 0, r)
-
-    # formula 9
-    mask = formula == 9
-    ating[mask] = np.where(resultado[mask] >= 0, 10, meta / resultado[mask])
-
-    return np.mean(ating)
-
-def encontrar_meta_atingimento(df):
-
-    meta_original = df.meta.iloc[0]
-    tipo = df.tipo.iloc[0]
-
-    low = meta_original * 0.01
-    high = meta_original * 100
-
-    melhor_meta = meta_original
-    melhor_erro = abs(calc_ating_medio(df, meta_original) - 1)
-
-    for _ in range(20):
-
-        meta = (low + high) / 2
-
-        ating = calc_ating_medio(df, meta)
-
-        erro = abs(ating - 1)
-
-        if erro < melhor_erro:
-            melhor_meta = meta
-            melhor_erro = erro
-
-        if 0.98 <= ating <= 1.02:
-            return meta
-
-        if tipo == "Maior Melhor":
-            if ating > 1:
-                low = meta
-            else:
-                high = meta
-        else:
-            if ating > 1:
-                high = meta
-            else:
-                low = meta
-
-    return melhor_meta
+    return meta_variacao, p_variacao, "Variação", meta_original
 
 def main():
     start_query = time.time()
@@ -412,49 +336,36 @@ def main():
 
     start_for = time.time()
     for (indicador, atributo), grupo in df.groupby(["id_indicador","atributo"]):
-        meta_critica = False
-        meta_otima, p = encontrar_meta(grupo)
+
+        meta_otima, p, tipo_meta, meta_original = encontrar_meta(grupo)
+        formato = grupo.formato.iloc[0]
+
         faixa_inf = grupo.faixa_inferior.iloc[0]
         faixa_sup = grupo.faixa_superior.iloc[0]
+
         if pd.isna(faixa_inf):
             faixa_inf = 0.37
 
         if pd.isna(faixa_sup):
             faixa_sup = 0.43
-        if p < faixa_inf * 0.5 or p > faixa_sup * 1.5:
-            meta_critica = True
-            meta_otima = encontrar_meta_atingimento(grupo)
-            p = calc_p_g1g2(grupo, meta_otima)
-        
-        # 🔹 ajuste de formato da meta
-        formato = grupo.formato.iloc[0]
 
         if formato == "integer":
             meta_otima = round(meta_otima)
             p = calc_p_g1g2(grupo, meta_otima)
 
-        definicao = None
-        if faixa_inf <= p <= faixa_sup:
-            definicao = "otima"
-        elif p > faixa_sup and p < (faixa_sup * 1.5):
-            definicao = "alto aceitavel"
-        elif p < faixa_inf and p > (faixa_inf * 0.5):
-            definicao = "baixo aceitavel"
-        else:
-            definicao = "critico estrutural"
         resultados.append({
-            "id_indicador": indicador,
             "atributo": atributo,
-            "meta_otima": meta_otima,
-            "p_g1g2": p,
-            "tipo_meta": "Atingimento" if meta_critica else "P_G1G2",
-            "definicao": definicao
+            "id_indicador": indicador,
+            "meta_otimizada": round(meta_otima, 3),
+            "meta_original": round(meta_original, 3),
+            "p_g1g2": round(p, 3),
+            "tipo_meta": tipo_meta
         })
 
     print("for executado em ", (time.time() - start_for))
     resultado_final = pd.DataFrame(resultados)
 
-    arquivo_saida = "metas_otimizadas.xlsx"
+    arquivo_saida = "meta_smart.xlsx"
 
     resultado_final.to_excel(
         arquivo_saida,
