@@ -424,7 +424,7 @@ def main():
         index=False
     )
 
-    insert_result(resultado_final)
+    #insert_result(resultado_final)
 
 if __name__ == "__main__":
     main()

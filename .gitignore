@@ -1,2 +1,5 @@
 *.xlsx
 *.zip
+/build
+/dist
+*.spec

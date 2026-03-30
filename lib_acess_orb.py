@@ -43,6 +43,7 @@ def main_func(driver, wait, resultados):
     try:
         senha = keyring.get_password("orbi", "e.gustavo.santos") # se futuramente precisar alterar o login, alterar aqui também"
         if not senha:
+            #keyring.set_password("orbi", "e.gustavo.santos", "senha aqui")
             logging.error("Senha não encontrada no keyring. Por favor, defina a senha.")
             return
         control = 0
@@ -140,7 +141,7 @@ if __name__ == "__main__":
 
     try:
         driver = start_driver()
-        wait = WebDriverWait(driver, 120)
+        wait = WebDriverWait(driver, 240)
         main_func(driver, wait, resultados)
     except Exception:
         logging.error("Erro na execução principal:\n" + traceback.format_exc())
