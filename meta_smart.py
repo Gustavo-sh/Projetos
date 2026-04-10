@@ -187,6 +187,7 @@ def insert_result(df):
         for row in df.itertuples(index=False)
     ]
 
+    cursor.execute("DELETE FROM dbo.meta_smart WHERE data_referencia = dateadd(d, 1, eomonth(getdate(), -2))")
     cursor.fast_executemany = True
     cursor.executemany(insert_sql, dados)
 
@@ -309,7 +310,10 @@ def metodo_variacao(df, meta):
                 nova_meta = 0.98
             return nova_meta 
         else:
-            return meta - (meta * 0.03)
+            nova_meta = meta - (meta * 0.03)
+            if id_indicador == 901 and nova_meta < 0.90:
+                nova_meta = 0.90
+            return nova_meta
     else:
         if atingimento >= 1:
             return meta - (meta * 0.03)
@@ -396,6 +400,9 @@ def main():
         elif formato == "hour":
             meta_otima = meta_otima/86400
             meta_original = meta_original/86400
+        elif formato == "percentage":
+            meta_otima = meta_otima*100
+            meta_original = meta_original*100
 
         resultados.append({
             "atributo": atributo,
@@ -424,7 +431,7 @@ def main():
         index=False
     )
 
-    #insert_result(resultado_final)
+    insert_result(resultado_final)
 
 if __name__ == "__main__":
     main()
