@@ -3,3 +3,8 @@
 /build
 /dist
 *.spec
+__pycache__
+*.txt
+build
+dist
+*.xls
