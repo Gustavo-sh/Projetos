@@ -1,9 +1,7 @@
 import shutil
 import time
 import os
-import logging
 import traceback
-from logging.handlers import TimedRotatingFileHandler
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -12,16 +10,22 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pyodbc
 import keyring
+from datetime import datetime
 
-# Configuração de logging 
-log_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-log_handler = TimedRotatingFileHandler("automacao_orbi.log", when="midnight", interval=1, backupCount=14, encoding="utf-8")
-log_handler.setFormatter(log_formatter)
-log_handler.suffix = "%Y-%m-%d" 
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(log_formatter)
+LOG_FILE = f"C:\\Users\\e.gustavo.santos\\Desktop\\Logs\\ORBI\\lib_acess_orbi_{datetime.now().date()}.log"
 
-logging.basicConfig(level=logging.INFO,handlers=[log_handler, console_handler])
+def log(msg):
+    timestamp = f"[{datetime.now()}] {msg}"
+
+    # console
+    print(timestamp)
+
+    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+    # arquivo
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(timestamp + "\n")
+
+
 
 def start_driver():
     """
@@ -30,6 +34,7 @@ def start_driver():
     """
     options = Options()
     options.add_argument("--start-maximized")
+    #options.add_argument("--headless")
     return webdriver.Chrome(options=options)
 
 def main_func(driver, wait, resultados): 
@@ -44,7 +49,7 @@ def main_func(driver, wait, resultados):
         senha = keyring.get_password("orbi", "e.gustavo.santos") # se futuramente precisar alterar o login, alterar aqui também"
         if not senha:
             #keyring.set_password("orbi", "e.gustavo.santos", "senha aqui")
-            logging.error("Senha não encontrada no keyring. Por favor, defina a senha.")
+            log("Senha não encontrada no keyring. Por favor, defina a senha.")
             return
         control = 0
         for key in resultados:
@@ -94,12 +99,12 @@ def main_func(driver, wait, resultados):
                 wait.until(EC.element_to_be_clickable((By.ID, "associar"))).click() # associar perfil
                 wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@id='message-box']/div/div/div[3]/button"))).click() # entendi
             
-            logging.info(f"Finalizado para o cargo {key} - liberando os relatorios {resultados[key]}.")
+            log(f"\nFinalizado para o cargo {key} - liberando os relatorios {resultados[key]}.")
 
     except Exception:
-        logging.error("Erro durante a execução:\n" + traceback.format_exc())
+        log("Erro durante a execução:\n" + traceback.format_exc())
     finally:
-        logging.info("Execução finalizada (try/except/finally).")
+        log("Execução finalizada.\n")
 
 def conexao_bd():
     """
@@ -144,7 +149,7 @@ if __name__ == "__main__":
         wait = WebDriverWait(driver, 240)
         main_func(driver, wait, resultados)
     except Exception:
-        logging.error("Erro na execução principal:\n" + traceback.format_exc())
+        log("Erro na execução principal:\n" + traceback.format_exc())
     finally:
         driver.quit()
-        logging.info("Driver fechado com sucesso.")
+        log("Driver fechado com sucesso.")
