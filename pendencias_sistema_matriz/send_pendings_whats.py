@@ -6,8 +6,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 import pyperclip
-from connections_db import query_results
-from utils import mount_message
+from connections_db import query_results, get_diretores, close_connection
+from utils import mount_message, mount_message_director
 
 def main():
 
@@ -22,33 +22,51 @@ def main():
     driver = webdriver.Chrome(options=options)
     wait = WebDriverWait(driver, 240)
     driver.get("https://web.whatsapp.com/")
-    destinatario = "Elvis Oliveira"
+    destinatario = "."
 
-    # Procura o grupo
-    search_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div/div/div/div[3]/div/div[4]/div/div[1]/div/div/div/div/div/div/div[2]/input')))
-    search_box.click()
-    search_box.send_keys(destinatario)
-    time.sleep(3)
-    search_box.send_keys(Keys.ENTER)
+    diretores = get_diretores()
 
-    # Campo de mensagem
-    msg_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div/div/div/div[3]/div/div[5]/div/footer/div[1]/div/span/div/div/div/div[3]/div[1]/p')))
+    mapping_groups = {"ANA PAULA GONCALVES ROCHA": ".",
+               "FAGNER EUSTAQUIO ANDRADE SILVA": ".",
+               "GISELE DE CASTRO MARQUES": ".",
+               "JAIME FERREIRA DE MACEDO MOURA": "."}
 
-    results = query_results()
-    msg = mount_message(results)
+    for diretor in diretores:
+        destinatario = mapping_groups.get(diretor, ".")
 
-    # Envia mensagem
-    pyperclip.copy(msg)
+        # Procura o grupo
+        search_box = wait.until(EC.element_to_be_clickable((By.ID, '_r_a_')))
+        search_box.click()
+        search_box.clear()
+        search_box.send_keys(destinatario)
+        time.sleep(3)
+        search_box.send_keys(Keys.ENTER)
 
-    msg_box.click()
-    msg_box.send_keys(Keys.CONTROL, 'v')
-    msg_box.send_keys(Keys.ENTER)
+        # Campo de mensagem
+        msg_box = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[1]/div/div/div/div/div[3]/div/div[4]/div/footer/div[1]/div/span/div/div/div/div[3]/div[1]/p')))
 
-    time.sleep(5)
+        
+        results = query_results(diretor=diretor)
+        msg = mount_message_director(results, diretor)
 
-    print("Mensagem enviada com sucesso!")
+        time.sleep(5)
 
-    driver.quit()
+        # Envia mensagem
+        pyperclip.copy(msg)
+
+        msg_box.click()
+        msg_box.send_keys(Keys.CONTROL, 'v')
+        msg_box.send_keys(Keys.ENTER)
+
+        time.sleep(2)
+
+        print("Mensagem do diretor " + diretor + " enviada com sucesso para " + destinatario + "!")
+
+    try:
+        driver.quit()
+        close_connection()
+    except:
+        pass
 
 if __name__ == "__main__":
     main()
