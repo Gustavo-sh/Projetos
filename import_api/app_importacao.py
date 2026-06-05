@@ -5,19 +5,16 @@ import json
 import time
 from api import main
 import threading
-import subprocess
 from utils import resource_path, notify
-
-subprocess.run(resource_path("ligar_proxy.bat"), shell=True)
 
 ctk.set_appearance_mode("dark")  # "light", "dark", "system"
 ctk.set_default_color_theme("blue")  # cores: "blue", "green", "dark-blue"
 
-def background_task(login, senha, lembrar_login, CT):
+def background_task(login, senha, lembrar_login, is_alteration, CT):
     if lembrar_login:
         with open(resource_path("config_login.json"), "w") as f:
             json.dump({"login": login}, f)
-    thread_tarefa = threading.Thread(target=main, args=(login, senha, CT), daemon=True)
+    thread_tarefa = threading.Thread(target=main, args=(login, senha, is_alteration, CT), daemon=True)
     thread_tarefa.start()
 
 class App(ctk.CTk):
@@ -59,7 +56,10 @@ class App(ctk.CTk):
 
         if os.path.exists(ARQUIVO_CONFIG):
             with open(ARQUIVO_CONFIG, "r") as f:
-                dados = json.load(f)
+                try:
+                    dados = json.load(f)
+                except:
+                    dados = {}
                 self.entry_nome.insert(0, dados.get("login", ""))
 
         label2 = ctk.CTkLabel(tab1, text="Digite sua SENHA:")
@@ -69,9 +69,12 @@ class App(ctk.CTk):
         self.entry_senha.pack(pady=5)
 
         checkbox_lembrar = ctk.CTkCheckBox(master=tab1, text="Lembrar login", command=None, onvalue=True, offvalue=False)
-        checkbox_lembrar.pack(pady=5) 
+        checkbox_lembrar.pack(pady=5)
 
-        botao1 = ctk.CTkButton(tab1, text="Iniciar a automação", command=lambda: background_task(self.entry_nome.get(), self.entry_senha.get(), checkbox_lembrar.get(), self))
+        checkbox_alterations = ctk.CTkCheckBox(master=tab1, text="Alterar Matriz", command=None, onvalue=True, offvalue=False)
+        checkbox_alterations.pack(pady=5)
+
+        botao1 = ctk.CTkButton(tab1, text="Iniciar a automação", command=lambda: background_task(self.entry_nome.get(), self.entry_senha.get(), checkbox_lembrar.get(), checkbox_alterations.get(), self))
         botao1.pack(pady=10)
 
     def aba_log(self):
@@ -96,7 +99,7 @@ class App(ctk.CTk):
                 self.textbox = textbox
 
             def write(self, message):
-                if message.strip() != "":
+                if message and message.strip():
                     self.textbox.insert("end", message + "\n")
                     self.textbox.see("end")  # rolar até o final
 

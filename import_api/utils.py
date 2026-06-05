@@ -13,7 +13,7 @@ def resource_path(relative_path):
 
 def write_log(message):
     with open(f'log_{datetime.now().strftime("%Y-%m-%d")}.txt', 'a') as log_file:
-        log_file.write(message + '\n')
+        log_file.write(str(message) + '\n')
 
 def notify(message):
     print(message)
