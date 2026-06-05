@@ -27,24 +27,24 @@ select distinct
     DIRETORATENDIMENTO,
     case
         when
-            (da_qualidade = 0 and da_planejamento = 0) then 'Pendencias Apoio'
+            (da_qualidade = 0 and da_planejamento = 0) then 'Sem nenhuma validação'
         when
             da_qualidade = 0
             and da_planejamento <> 0
-            and da_exop = 0 then 'Pendencias Qualidade'
+            and da_exop = 0 then 'Qualidade'
         when
             da_qualidade <> 0
             and da_planejamento = 0
-            and da_exop = 0 then 'Pendencias Planejamento'
+            and da_exop = 0 then 'Planejamento'
         when
             da_qualidade <> 0
             and da_planejamento <> 0
-            and da_operacao = 0 then 'Pendencias Operação'
+            and da_operacao = 0 then 'Operação'
         when
             da_operacao <> 0
             and da_qualidade <> 0
             and da_planejamento <> 0
-            and da_exop = 0 then 'Pendencias Exop'
+            and da_exop = 0 then 'Exop'
         else 'N/A'
     end as responsavel
 from sistema_matriz (nolock) sm

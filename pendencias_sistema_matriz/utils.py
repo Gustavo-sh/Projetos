@@ -54,7 +54,7 @@ def mount_message_director(resultados, diretor):
         return msg + "Sem pendências hoje ✅"
 
     produto_atual = None
-    resp_qtd = {"Pendencias Apoio": 0, "Pendencias Qualidade": 0, "Pendencias Planejamento": 0, "Pendencias Operação": 0, "Pendencias Exop": 0}
+    resp_qtd = {"Qualidade": 0, "Planejamento": 0, "Operação": 0, "Exop": 0, "Sem nenhuma validação": 0}
 
     for _, produto, responsavel, qtd in resultados:
         if produto != produto_atual:
@@ -66,12 +66,12 @@ def mount_message_director(resultados, diretor):
     total = sum(resp_qtd.values())
     msg += f"🧾 Total de pendências: {total}\n\n"
 
-    msg += "👤 Pendências Por Responsável: \n\n"
+    msg += "👤 Segmentos aguardando validação da área: \n\n"
 
     for chave, valor in resp_qtd.items():
         msg += f"{chave}: {valor}\n"
 
-    msg += "\n📊 Pendências por produto e diretor:\n"
+    msg += "\n📊 Pendências por diretor e produto:\n"
 
     msg += pendencias
 

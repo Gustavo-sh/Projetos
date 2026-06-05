@@ -26,10 +26,10 @@ def main():
 
     diretores = get_diretores()
 
-    mapping_groups = {"ANA PAULA GONCALVES ROCHA": ".",
-               "FAGNER EUSTAQUIO ANDRADE SILVA": ".",
-               "GISELE DE CASTRO MARQUES": ".",
-               "JAIME FERREIRA DE MACEDO MOURA": "."}
+    mapping_groups = {"ANA PAULA GONCALVES ROCHA": "Danilo",
+               "FAGNER EUSTAQUIO ANDRADE SILVA": "Danilo",
+               "GISELE DE CASTRO MARQUES": "Danilo",
+               "JAIME FERREIRA DE MACEDO MOURA": "Danilo"}
 
     for diretor in diretores:
         destinatario = mapping_groups.get(diretor, ".")
