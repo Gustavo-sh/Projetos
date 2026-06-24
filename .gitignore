@@ -10,3 +10,5 @@ dist
 *.xls
 *.msg
 *.pyc
+.wwebjs*
+node_modules
