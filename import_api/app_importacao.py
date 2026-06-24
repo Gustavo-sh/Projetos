@@ -30,7 +30,7 @@ class App(ctk.CTk):
                 sys.exit()
         
         self.title("Importação de Metas - Robbyson")
-        self.geometry("800x400")
+        self.geometry("1100x600")
 
         # Criar um notebook (abas)
         self.tabview = ctk.CTkTabview(self, width=800, height=350)
@@ -85,7 +85,7 @@ class App(ctk.CTk):
         label2.pack(pady=10)
 
         # Caixa de texto para exibir o log
-        self.log_box = ctk.CTkTextbox(tab2, width=800, height=250)
+        self.log_box = ctk.CTkTextbox(tab2, width=1050, height=500)
         self.log_box.pack(pady=5)
 
         if os.path.exists(LOG_PERSISTENTE):

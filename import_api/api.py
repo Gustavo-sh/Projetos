@@ -44,9 +44,9 @@ def search_attribute(session, token, id_indicador, data_inicio, atributo):
 
     response_get = session.get('https://api.robbyson.com/goal/adminList', params=params, headers=headers_get, timeout=60)
 
-    notify("\n" + str(response_get.status_code) + " - Get do disable\n")
+    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+"\n" + str(response_get.status_code) + " - Get do disable\n")
     write_log(response_get.text)
-    notify(f":: Data inicio enviada neste get do disable: {data_inicio}, timestamp: {timestamp}, atributo: {atributo} ::")
+    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Data inicio enviada neste get do disable: {data_inicio}, timestamp: {timestamp}, atributo: {atributo} ::")
 
     if response_get.status_code != 200:
         raise Exception(response_get.text)
@@ -62,12 +62,12 @@ def disable_attribute(session, token, indicator_id, mes_ano, atributo):
     items = data["data"]["items"]
 
     if not items:
-        notify(f":: Pulando indicador {indicator_id} na data inicio {mes_ano}, pois não encontrou nenhum item :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Pulando indicador {indicator_id} do atributo {atributo} na data inicio {mes_ano}, pois não encontrou nenhum item :: ")
         return None
 
     ids = [item["_id"] for item in items]
 
-    notify(":: IDs encontrados: " + ", ".join(ids) + " :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: IDs encontrados: " + ", ".join(ids) + " :: ")
 
     headers_post = {
         'accept': 'application/json, text/plain, */*',
@@ -92,7 +92,7 @@ def disable_attribute(session, token, indicator_id, mes_ano, atributo):
         }, timeout=60
     )
 
-    notify("\n" + str(response_disable.status_code) + " - Post do disable")
+    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+"\n" + str(response_disable.status_code) + " - Post do disable")
     write_log(response_disable.text)
 
     if response_disable.status_code != 200:
@@ -106,11 +106,11 @@ def main(username, password, is_alteration, CT):
     try:
         proxy_active = subprocess.run(resource_path("ligar_proxy.bat"), shell=True)
         if proxy_active.returncode != 0:
-            notify(":: Falha ao ligar proxy, verifique o arquivo ligar_proxy.bat :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Falha ao ligar proxy, verifique o arquivo ligar_proxy.bat :: ")
             exit()
         time.sleep(1)
         CT.tabview.set("LOG")
-        notify("\n:: Automacao rodando, aguarde... :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Automacao rodando, aguarde... :: ")
 
         BASE_URL = "https://api.robbyson.com"
         TOKEN = None
@@ -130,15 +130,15 @@ def main(username, password, is_alteration, CT):
 
         try:
             search_attribute(session, TOKEN, '901', '01/06/2026', 'TEST ATTRIBUTE') # to validate the session token
-            notify(":: Token obtido do json validado com sucesso ::")
+            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Token obtido do json validado com sucesso ::")
             deslig_proxy = resource_path("desligar_proxy.bat")
             proxy_inactive = subprocess.run(deslig_proxy, shell=True)
             if proxy_inactive.returncode != 0:
-                notify(":: Falha ao desligar proxy, verifique o arquivo ligar_proxy.bat :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Falha ao desligar proxy, verifique o arquivo ligar_proxy.bat :: ")
                 exit()
         except Exception as e:
             if 'token' in str(e) or 'session' in str(e):
-                notify(":: Token do json expirado, obtendo um novo token :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Token do json expirado, obtendo um novo token :: ")
                 write_log("\n:: erro_token ::\n" + str(e))
                 TOKEN = get_session_key(username, password)
 
@@ -155,9 +155,8 @@ def main(username, password, is_alteration, CT):
         session.headers.update(headers)
 
         if is_alteration:
-            notify("\n:: Iniciando desabilitação de atributos :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             df = pd.read_excel("ImportacaoMatriz.xls", sheet_name="Plan1")
-            notify(f"Iniciando desativação para {len(df.index)} linhas em 5 segundos.\nPrimeiro atributo do arquivo: {df.iloc[0]['ATRIBUTOS']} :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Iniciando desativação para {len(df.index)} linhas em 5 segundos.\nPrimeiro atributo do arquivo: {df.iloc[0]['ATRIBUTOS']} :: ")
             time.sleep(5)
             for indice, row in df.iterrows():
                 if pd.isna(row["INDICADOR"]) or pd.isna(row["ATRIBUTOS"]) or pd.isna(row["DATA_INICIO"]) or pd.isna(row["DATA_FIM"]) or pd.isna(row["VALOR_META"]) or pd.isna(row["ATIVO"]):
@@ -183,8 +182,8 @@ def main(username, password, is_alteration, CT):
             notify("\n" + str(response.status_code) + " - " + response.text)
             raise Exception("Erro no import")
 
-        notify("\n" + str(response.status_code) + " - Import")
-        write_log("\n:: response_import ::\n" + response.text)
+        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Import (passo 1) realizado com sucesso - status code: {response.status_code} ::")
+        write_log("\n:: text do import ::\n" + response.text)
 
         data = response.json()
 
@@ -209,8 +208,8 @@ def main(username, password, is_alteration, CT):
             notify("\n" + str(response_save.status_code) + " - " + response_save.text)
             raise Exception("Erro ao salvar")
 
-        notify("\n" + str(response_save.status_code) + " - Save Importing Cache")
-        write_log("\n:: response_save ::\n" + response_save.text)
+        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Save importing cache (passo 2) realizado com sucesso - status code: {response_save.status_code} ::")
+        write_log("\n:: text do save importing cache ::\n" + response_save.text)
 
         ### PASSO 3
 
@@ -228,7 +227,7 @@ def main(username, password, is_alteration, CT):
 
             if response_get.status_code != 200:
                 raise Exception(
-                    f"Erro ao consultar cache: {response_get.status_code}"
+                    f"Erro no passo 3 (get importing cache): {response_get.status_code}"
                 )
 
             data = response_get.json()
@@ -240,7 +239,7 @@ def main(username, password, is_alteration, CT):
             )
 
             if status.lower() == "done":
-                notify(":: Processamento concluído ::")
+                notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Processamento concluído ::")
                 break
             elif status.lower() == "error":
                 
@@ -270,9 +269,9 @@ def main(username, password, is_alteration, CT):
             notify("\n" + str(response_delete.status_code) + " - " + response_delete.text)
             raise Exception("Erro ao deletar cache")
 
-        notify("\n" + str(response_delete.status_code) + " - Delete Importing Cache")
-        write_log("\n:: response_delete ::\n" + response_delete.text)
+        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Delete importing cache (passo 4) realizado com sucesso - status code: {response_delete.status_code} ::")
+        write_log("\n:: text do delete importing cache ::\n" + response_delete.text)
 
-        notify("\n:: Automacao encerrada :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Automacao encerrada :: ")
     except Exception as e:
-        notify("\n:: Erro na automação :: " + str(e) + " :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Erro na automação: " + str(e) + " :: ")
