@@ -5,6 +5,9 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+    },
+    puppeteerOptions: {
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     }
 });
 
