@@ -15,7 +15,7 @@ def main():
         # search_group_whatsapp(wait, "Robbyson - Avisos")
         notify_whatsapp("🖥️ Iniciando monitoramento das procedures.\nAs mensagens serão reenviadas a cada 5 minutos com o status das procedures em execução.")
         now = datetime.now()
-        while now < datetime(now.year, now.month, now.day, 18, 0, 0):
+        while now < datetime(now.year, now.month, now.day, 12, 0, 0):
             nulls = get_nulls()
             avg_durations = get_avg_duration()
             logging_msg("Nulls e avg_durations obtidos, iniciando análise...")
