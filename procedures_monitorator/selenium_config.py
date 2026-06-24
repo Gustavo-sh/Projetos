@@ -12,7 +12,6 @@ def create_webdriver():
     options = Options()
     options.add_argument(r"user-data-dir=C:\chrome-selenium-profile")
     options.add_argument("--start-maximized")
-    #options.add_argument("--headless=new")
     driver = webdriver.Chrome(options=options)
     wait = WebDriverWait(driver, 60)
     
