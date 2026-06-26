@@ -25,7 +25,7 @@ def convert_timezone(data_str):
 def main():
     try:
         now = datetime.now()
-        while now < datetime(now.year, now.month, now.day, 13, 0, 0):
+        while now < datetime(now.year, now.month, now.day, 12, 0, 0):
             truncate_logger()
             print("Dados deletados da dbo.pbi_monitor...")
 
