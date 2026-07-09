@@ -44,7 +44,7 @@ def search_attribute(session, token, id_indicador, data_inicio, atributo):
 
     response_get = session.get('https://api.robbyson.com/goal/adminList', params=params, headers=headers_get, timeout=60)
 
-    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+"\n" + str(response_get.status_code) + " - Get do disable\n")
+    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + str(response_get.status_code) + " - Get do disable")
     write_log(response_get.text)
     notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Data inicio enviada neste get do disable: {data_inicio}, timestamp: {timestamp}, atributo: {atributo} ::")
 
@@ -92,7 +92,7 @@ def disable_attribute(session, token, indicator_id, mes_ano, atributo):
         }, timeout=60
     )
 
-    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+"\n" + str(response_disable.status_code) + " - Post do disable")
+    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + str(response_disable.status_code) + " - Post do disable")
     write_log(response_disable.text)
 
     if response_disable.status_code != 200:
@@ -156,8 +156,8 @@ def main(username, password, is_alteration, CT):
 
         if is_alteration:
             df = pd.read_excel("ImportacaoMatriz.xls", sheet_name="Plan1")
-            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Iniciando desativação para {len(df.index)} linhas em 5 segundos.\nPrimeiro atributo do arquivo: {df.iloc[0]['ATRIBUTOS']} :: ")
-            time.sleep(5)
+            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Iniciando desativação para {len(df.index)} linhas em 10 segundos.\nPrimeiro atributo do arquivo: {df.iloc[0]['ATRIBUTOS']} :: ")
+            time.sleep(10)
             for indice, row in df.iterrows():
                 if pd.isna(row["INDICADOR"]) or pd.isna(row["ATRIBUTOS"]) or pd.isna(row["DATA_INICIO"]) or pd.isna(row["DATA_FIM"]) or pd.isna(row["VALOR_META"]) or pd.isna(row["ATIVO"]):
                     notify(f":: Problema encontrado na linha {indice}, valide o arquivo e execute novamente :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
