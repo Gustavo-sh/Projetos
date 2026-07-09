@@ -1,3 +1,4 @@
+console.log('SCRIPT INICIADO');
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 
@@ -16,6 +17,10 @@ const app = express();
 
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
+});
+
+client.on('ready', () => {
+    console.log('WHATSAPP PRONTO');
 });
 
 client.initialize();
