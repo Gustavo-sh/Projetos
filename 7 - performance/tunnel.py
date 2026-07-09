@@ -1,6 +1,7 @@
 import subprocess
 import time
 import socket
+import os
 
 
 class Tunnel:
@@ -22,7 +23,11 @@ class Tunnel:
             print("Túnel já estava aberto...")
             return
 
-        GCLOUD = "C:\\Program Files (x86)\\Google\\Cloud SDK\\google-cloud-sdk\\bin\\gcloud.cmd"
+        #GCLOUD = "C:\\Program Files (x86)\\Google\\Cloud SDK\\google-cloud-sdk\\bin\\gcloud.cmd"
+        GCLOUD = r"C:\GoogleCloudSDK\google-cloud-sdk\bin\gcloud.cmd"
+
+        env = os.environ.copy()
+        env["CLOUDSDK_CONFIG"] = r"C:\gcloud"
 
         self.process = subprocess.Popen(
             [
@@ -33,8 +38,9 @@ class Tunnel:
                 "27017",
                 "--local-host-port=127.0.0.1:26017",
                 "--project",
-                "robbyson-production"
-            ]
+                "robbyson-production",
+            ],
+            env=env,
         )
 
         while not self.tunnel_aberto():

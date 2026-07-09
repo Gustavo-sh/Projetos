@@ -42,7 +42,13 @@ class PerformanceSync:
 
     def run(self, days):
 
+        self.sql.cursor.execute("""delete from rby.performance_python_log""")
+
         for offset in range(days, 0, -1):
+
+            print(f"Offset: {offset}")
+            # if offset == 15:
+            #     break
 
             dia = date.today() - timedelta(days=offset)
 
@@ -54,7 +60,12 @@ class PerformanceSync:
 
     def sync_day(self, dia):
 
-        print(f"processando o dia {dia}...")
+        self.sql.cursor.execute("""
+                                insert into rby.performance_python_log values
+                                (?,getdate(),NULL,NULL)
+                                """,(dia,))
+
+        print(f"Processando o dia {dia}...")
 
         cursor = self.pg.cursor()
 
@@ -62,7 +73,6 @@ class PerformanceSync:
             """
             SELECT
                 data,
-                nome_nivel_hierarquia::int AS nome_nivel_hierarquia,
                 chave_externa,
                 coalesce(chave_externa_supervisor, 0) AS chave_externa_supervisor,
                 coalesce(chave_externa_coordenador, 0) AS chave_externa_coordenador,
@@ -90,6 +100,7 @@ class PerformanceSync:
             WHERE data=%s
             and nome_nivel_hierarquia IS NOT NULL
             and segmento IS NOT NULL
+            and nome_nivel_hierarquia = '1'
             """,
             (dia,),
         )
@@ -101,14 +112,13 @@ class PerformanceSync:
             INSERT_SQL = """
                 INSERT INTO rby.performance_python (
                     data,
-                    nome_nivel_hierarquia,
                     chave_externa,
                     chave_externa_supervisor,
                     chave_externa_coordenador,
                     chave_externa_gerente_jr,
                     chave_externa_gerente_pl,
                     chave_externa_gerente_sr,
-                    chave_externa_superintendente,
+                    chave_externa_gerente_executivo,
                     chave_externa_diretor_atendimento,
                     chave_externa_diretor,
                     segmento,
@@ -126,7 +136,7 @@ class PerformanceSync:
                     fator_3,
                     fator_4
                 )
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """
 
             lines = 0
@@ -134,6 +144,8 @@ class PerformanceSync:
             while True:
 
                 rows = cursor.fetchmany(self.fetch_size)
+
+                #print(f"{len(rows)} linhas recebidas do postgre...")
 
                 if not rows:
                     break
@@ -145,8 +157,6 @@ class PerformanceSync:
                 lines += len(rows)
 
             print(f"{lines} linhas inseridas para o dia {dia}...")
-
-            self.sql.commit()
 
             self.sql.cursor.execute(
                 """
@@ -164,6 +174,14 @@ class PerformanceSync:
                     f"diferente da quantidade de linhas na tabela "
                     f"({self.sql.cursor.fetchone()[0]})"
                 )
+            
+            self.sql.cursor.execute("""
+                                update rby.performance_python_log
+                                set end_time = getdate(), lines = ?
+                                where day = ?
+                                """,(lines,dia,))
+            
+            self.sql.commit()
 
         except:
 

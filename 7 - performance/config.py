@@ -13,15 +13,14 @@ POSTGRES_USER = "robbyson_view"
 POSTGRES_PASSWORD = "juleH7JHZUnzYQBE"
 
 SQLSERVER_CONNECTION = (
-    "DRIVER={ODBC Driver 17 for SQL Server};"
+    "DRIVER={ODBC Driver 18 for SQL Server};"
     "SERVER=primno4;"
     "DATABASE=robbyson;"
     "Trusted_Connection=yes;"
+    "Encrypt=no;"
 )
 
 FETCH_SIZE = 20000
-
-DAYS_BACK = 16
 
 CSV_FOLDER = r"C:\Temp\Performance"
 

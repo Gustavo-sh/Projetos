@@ -24,7 +24,7 @@ def main():
             config.FETCH_SIZE
         )
 
-        sync.run(config.DAYS_BACK)
+        sync.run(16)
 
     finally:
 

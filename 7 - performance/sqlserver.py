@@ -14,6 +14,8 @@ class SqlServer:
 
     def delete_day(self, dia):
 
+        print(f"Deletando {dia}...")
+
         while True:
 
             self.cursor.execute(
@@ -27,6 +29,8 @@ class SqlServer:
 
             if self.cursor.rowcount == 0:
                 break
+
+        print(f"Dia {dia} deletado...")
 
     def insert_many(self, sql, rows):
 
