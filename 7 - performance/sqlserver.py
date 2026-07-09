@@ -1,5 +1,5 @@
 import pyodbc
-
+from utils import write_log
 
 class SqlServer:
 
@@ -14,7 +14,7 @@ class SqlServer:
 
     def delete_day(self, dia):
 
-        print(f"Deletando {dia}...")
+        write_log(f"Deletando {dia}...")
 
         while True:
 
@@ -30,7 +30,7 @@ class SqlServer:
             if self.cursor.rowcount == 0:
                 break
 
-        print(f"Dia {dia} deletado...")
+        write_log(f"Dia {dia} deletado...")
 
     def insert_many(self, sql, rows):
 

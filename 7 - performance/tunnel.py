@@ -2,6 +2,7 @@ import subprocess
 import time
 import socket
 import os
+from utils import write_log
 
 
 class Tunnel:
@@ -20,7 +21,7 @@ class Tunnel:
     def start(self):
 
         if self.tunnel_aberto():
-            print("Túnel já estava aberto...")
+            write_log("Túnel já estava aberto...")
             return
 
         #GCLOUD = "C:\\Program Files (x86)\\Google\\Cloud SDK\\google-cloud-sdk\\bin\\gcloud.cmd"
@@ -39,12 +40,25 @@ class Tunnel:
                 "--local-host-port=127.0.0.1:26017",
                 "--project",
                 "robbyson-production",
+                "--zone=us-east4-c"
             ],
             env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
         )
 
         while not self.tunnel_aberto():
-            time.sleep(2)
+            if self.process.poll() is not None:
+                out, err = self.process.communicate()
+
+                write_log(out)
+                write_log(err)
+
+                raise Exception("gcloud encerrou")
+            
+            time.sleep(5)
+            write_log("Tunnel ainda não foi aberto, aguarando 5 segundos para tentar novamente...")
 
     def stop(self):
 

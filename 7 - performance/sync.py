@@ -2,6 +2,7 @@ from datetime import date
 from datetime import timedelta
 from decimal import Decimal
 import time
+from utils import write_log
 
 class PerformanceSync:
 
@@ -44,9 +45,11 @@ class PerformanceSync:
 
         self.sql.cursor.execute("""delete from rby.performance_python_log""")
 
+        write_log("Dados deletados da rby.performance_log...")
+
         for offset in range(days, 0, -1):
 
-            print(f"Offset: {offset}")
+            write_log(f"Offset: {offset}")
             # if offset == 15:
             #     break
 
@@ -56,7 +59,7 @@ class PerformanceSync:
             self.sync_day(dia)
             fim = time.time()
 
-            print(f"{int(fim - inicio)} segundos para processar o dia {dia}...")
+            write_log(f"{int(fim - inicio)} segundos para processar o dia {dia}...")
 
     def sync_day(self, dia):
 
@@ -65,7 +68,7 @@ class PerformanceSync:
                                 (?,getdate(),NULL,NULL)
                                 """,(dia,))
 
-        print(f"Processando o dia {dia}...")
+        write_log(f"Processando o dia {dia}...")
 
         cursor = self.pg.cursor()
 
@@ -145,7 +148,6 @@ class PerformanceSync:
 
                 rows = cursor.fetchmany(self.fetch_size)
 
-                #print(f"{len(rows)} linhas recebidas do postgre...")
 
                 if not rows:
                     break
@@ -156,7 +158,10 @@ class PerformanceSync:
 
                 lines += len(rows)
 
-            print(f"{lines} linhas inseridas para o dia {dia}...")
+                if lines % 100000 == 0:
+                    write_log(f"{len(rows)} linhas recebidas do postgre...")
+
+            write_log(f"{lines} linhas inseridas para o dia {dia}...")
 
             self.sql.cursor.execute(
                 """
