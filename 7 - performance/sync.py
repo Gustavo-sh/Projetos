@@ -159,7 +159,7 @@ class PerformanceSync:
                 lines += len(rows)
 
                 if lines % 100000 == 0:
-                    write_log(f"{len(rows)} linhas recebidas do postgre...")
+                    write_log(f"Total de {lines} linhas recebidas do postgre até agora...")
 
             write_log(f"{lines} linhas inseridas para o dia {dia}...")
 

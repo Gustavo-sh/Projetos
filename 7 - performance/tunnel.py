@@ -3,7 +3,7 @@ import time
 import socket
 import os
 from utils import write_log
-
+import re
 
 class Tunnel:
 
@@ -21,8 +21,9 @@ class Tunnel:
     def start(self):
 
         if self.tunnel_aberto():
-            write_log("Túnel já estava aberto...")
-            return
+            write_log("Encontrado túnel aberto.")
+
+            self.kill_existing_tunnel()
 
         #GCLOUD = "C:\\Program Files (x86)\\Google\\Cloud SDK\\google-cloud-sdk\\bin\\gcloud.cmd"
         GCLOUD = r"C:\GoogleCloudSDK\google-cloud-sdk\bin\gcloud.cmd"
@@ -47,7 +48,7 @@ class Tunnel:
             stderr=subprocess.PIPE,
             text=True
         )
-
+        inicio = time.time()
         while not self.tunnel_aberto():
             if self.process.poll() is not None:
                 out, err = self.process.communicate()
@@ -57,11 +58,36 @@ class Tunnel:
 
                 raise Exception("gcloud encerrou")
             
-            time.sleep(5)
+            if time.time() - inicio > 300:
+                raise TimeoutError("Tunnel não abriu em 300 segundos.")
+            
             write_log("Tunnel ainda não foi aberto, aguarando 5 segundos para tentar novamente...")
+            time.sleep(5)
 
     def stop(self):
 
         if self.process:
 
-            self.process.kill()
+            self.kill_existing_tunnel()
+
+    def kill_existing_tunnel(self):
+
+        saida = subprocess.check_output(
+            ["netstat", "-ano"],
+            text=True
+        )
+
+        for linha in saida.splitlines():
+
+            if ":26017" in linha and "LISTENING" in linha:
+
+                pid = re.split(r"\s+", linha.strip())[-1]
+
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/PID", pid],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+
+                write_log(f"Tunnel existente (PID {pid}) finalizado.")
+                return
