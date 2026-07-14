@@ -35,3 +35,10 @@ TABLE = "rby.performance_python"
 CSV_FOLDER = "./temp"
 
 LOG_FOLDER = "./logs"
+
+
+PORTA_RETORNO = 27017
+
+USER_RETORNO = "robbyson_customer"
+
+PASSWORD_RETORNO = "TVnDKkxCX-8bPrbV"
