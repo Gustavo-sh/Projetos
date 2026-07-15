@@ -40,20 +40,19 @@ def run_aec(days):
 
     try:
 
-        CURSOR_SQL.execute("""delete from rby.performance_python_log""")
-
-        write_log("Dados deletados da rby.performance_log...")
-
         CONN_PG = create_connection(os.getenv("HOST_RETORNO"), os.getenv("PORTA_RETORNO"), os.getenv("POSTGRES_DATABASE"), os.getenv("USER_RETORNO"), os.getenv("PASSWORD_RETORNO"))
+        #CONN_PG = create_connection(os.getenv("LOCAL_HOST"), os.getenv("LOCAL_PORT"), os.getenv("POSTGRES_DATABASE"), os.getenv("POSTGRES_USER"), os.getenv("POSTGRES_PASSWORD"))
         CURSOR_PG = CONN_PG.cursor()
 
         for offset in range(days, 0, -1):
 
             write_log(f"Offset: {offset}")
-            # if offset == 15:
-            #     break
+            if offset == 15:
+                break
 
             dia = date.today() - timedelta(days=offset)
+            CURSOR_SQL.execute("""delete from rby.performance_python_log where day = ?""", (dia,))
+            write_log(f"Dados deletados da rby.performance_log para o dia {dia}...")
 
             inicio = time.time()
             sync_day_aec(dia, CURSOR_PG)
@@ -124,6 +123,7 @@ def sync_day_aec(dia, cursor_pg):
             COALESCE(chave_externa_coordenador, 0) AS chave_externa_coordenador,
             COALESCE(chave_externa_superintendente, 0) AS chave_externa_gerente_executivo,
             COALESCE(chave_externa_diretor_de_atendimento, 0) AS chave_externa_diretor_de_atendimento,
+            --COALESCE(chave_externa_diretor_atendimento, 0) AS chave_externa_diretor_de_atendimento,
             COALESCE(chave_externa_diretor, 0) AS chave_externa_diretor,
             segmento,
             id_indicador,
@@ -143,6 +143,7 @@ def sync_day_aec(dia, cursor_pg):
             fator_3,
             fator_4
         FROM public.performance_view
+        --FROM "views".performance_view
         WHERE data=%s
         and nome_nivel_hierarquia IS NOT NULL
         and segmento IS NOT NULL
@@ -227,6 +228,7 @@ def sync_day_aec(dia, cursor_pg):
                             set end_time = getdate(), lines = ?
                             where day = ?
                             """,(lines,dia,))
+        write_log(f"Data fim e linhas atualizado na rby.performance_python_log para o dia {dia}...")
         
         commit()
 
