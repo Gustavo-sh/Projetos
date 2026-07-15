@@ -47,8 +47,8 @@ def run_aec(days):
         for offset in range(days, 0, -1):
 
             write_log(f"Offset: {offset}")
-            if offset == 15:
-                break
+            # if offset == 15:
+            #     break
 
             dia = date.today() - timedelta(days=offset)
             CURSOR_SQL.execute("""delete from rby.performance_python_log where day = ?""", (dia,))
