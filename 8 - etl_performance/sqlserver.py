@@ -19,7 +19,7 @@ CURSOR_SQL = CONN_SQL.cursor()
 CURSOR_SQL.fast_executemany = True
 
 
-def delete_day(dia):
+def delete_day_aec(dia):
 
     write_log(f"Deletando {dia}...")
 
@@ -30,6 +30,7 @@ def delete_day(dia):
             DELETE TOP (10000)
             FROM rby.performance_python
             WHERE data = ?
+            and segmento not like '%santander%'
             """,
             dia
         )
@@ -40,7 +41,32 @@ def delete_day(dia):
     write_log(f"Dia {dia} deletado...")
 
 
-def insert_many(sql, rows):
+def delete_day_santander(dia):
+
+    write_log(f"Deletando {dia}...")
+
+    while True:
+
+        CURSOR_SQL.execute(
+            """
+            DELETE TOP (10000)
+            FROM rby.performance_python
+            WHERE data = ?
+            and segmento like '%santander%'
+            """,
+            dia
+        )
+
+        if CURSOR_SQL.rowcount == 0:
+            break
+
+    write_log(f"Dia {dia} deletado...")
+
+
+def insert_many(sql, rows, many=True):
+
+    if not many:
+        CURSOR_SQL.fast_executemany = False
 
     CURSOR_SQL.executemany(sql, rows[:])
 
