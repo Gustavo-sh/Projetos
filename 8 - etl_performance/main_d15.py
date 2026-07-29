@@ -1,7 +1,7 @@
 from tunnel import start_tunnel, kill_existing_tunnel
 from utils import write_log
 from sqlserver import CONN_SQL, CURSOR_SQL, commit
-from sync import run_aec
+from sync import run_aec, run_santander
 from datetime import datetime, time
 
 def main():
@@ -20,6 +20,7 @@ def main():
         write_log("D15 entrando em etapa de execução...")
 
         run_aec(16)
+        run_santander(16)
 
         if datetime.now().time() < time(8, 0):
             write_log("Iniciando rebuild o indice...")
@@ -48,7 +49,7 @@ def main():
 
         # kill_existing_tunnel()
         # write_log("Tunnel finalizado com sucesso...")
-        # write_log("ETL D15 finalizada com sucesso.")
+        write_log("ETL D15 finalizada com sucesso.")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 from tunnel import start_tunnel, kill_existing_tunnel
 from utils import write_log
 from sqlserver import CONN_SQL, CURSOR_SQL, commit
-from sync import run_aec
+from sync import run_aec, run_santander
 from datetime import datetime, time
 
 def main():
@@ -20,6 +20,7 @@ def main():
         write_log("D45 entrando em etapa de execução...")
 
         run_aec(46)
+        run_santander(46)
 
         write_log("Iniciando rebuild o indice...")
         CURSOR_SQL.execute("""alter index NonClusteredColumnStore on rby.performance_python rebuild""")
@@ -47,7 +48,7 @@ def main():
 
         # kill_existing_tunnel()
         # write_log("Tunnel finalizado com sucesso...")
-        # write_log("ETL D45 finalizada com sucesso.")
+        write_log("ETL D45 finalizada com sucesso.")
 
 
 if __name__ == "__main__":
