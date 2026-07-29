@@ -8,12 +8,7 @@ import pandas as pd
 import pytz
 import json
 
-def search_attribute(session, token, id_indicador, data_inicio, atributo):
-    tz = pytz.timezone("America/Sao_Paulo")
-    data = tz.localize(
-        datetime.strptime(data_inicio, "%d/%m/%Y")
-    )
-    timestamp = int(data.timestamp() * 1000)
+def search_attribute(session, token, mes_ano, atributo):
 
     headers_get = {
         'accept': 'application/json, text/plain, */*',
@@ -34,19 +29,17 @@ def search_attribute(session, token, id_indicador, data_inicio, atributo):
 
     params = {
         'active': 'true',
-        'indicatorId': id_indicador,
-        'keyWord': '',
+        'keyWord': mes_ano,
         'page': '1',
         'per': '42',
         'searchAttributesValueDescription': atributo,
-        'startDateEquals': timestamp,
     }
 
     response_get = session.get('https://api.robbyson.com/goal/adminList', params=params, headers=headers_get, timeout=60)
 
-    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + str(response_get.status_code) + " - Get do disable")
+    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " :: " + str(response_get.status_code) + " - Get do disable ::")
     write_log(response_get.text)
-    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Data inicio enviada neste get do disable: {data_inicio}, timestamp: {timestamp}, atributo: {atributo} ::")
+    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Descrição enviada neste get do disable: {mes_ano}, atributo: {atributo} ::")
 
     if response_get.status_code != 200:
         raise Exception(response_get.text)
@@ -55,50 +48,52 @@ def search_attribute(session, token, id_indicador, data_inicio, atributo):
 
     return data
 
-def disable_attribute(session, token, indicator_id, mes_ano, atributo):
+def disable_attribute(session, token, mes_ano, atributo):
 
-    data = search_attribute(session, token, indicator_id, mes_ano, atributo)
-    
-    items = data["data"]["items"]
+    for _ in range(2):
 
-    if not items:
-        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Pulando indicador {indicator_id} do atributo {atributo} na data inicio {mes_ano}, pois não encontrou nenhum item :: ")
-        return None
+        data = search_attribute(session, token, mes_ano, atributo)
+        
+        items = data["data"]["items"]
 
-    ids = [item["_id"] for item in items]
+        if not items:
+            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Pulando o atributo {atributo} com descrição {mes_ano}, pois não encontrou nenhum item :: ")
+            return None
 
-    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: IDs encontrados: " + ", ".join(ids) + " :: ")
+        ids = [item["_id"] for item in items]
 
-    headers_post = {
-        'accept': 'application/json, text/plain, */*',
-        'accept-language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-        'content-type': 'application/json;charset=UTF-8',
-        'origin': 'https://app.robbyson.com',
-        'priority': 'u=1, i',
-        'referer': 'https://app.robbyson.com/',
-        'sec-ch-ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
-        'sec-ch-ua-mobile': '?1',
-        'sec-ch-ua-platform': '"Android"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-site',
-        'sessionkey': token,
-        'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36',
-        'x-system-id': '2',
-    }
+        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: IDs encontrados: " + ", ".join(ids) + " :: ")
 
-    response_disable = session.post('https://api.robbyson.com/goal/disableMany', headers=headers_post, json={
-            "_ids": ids
-        }, timeout=60
-    )
+        headers_post = {
+            'accept': 'application/json, text/plain, */*',
+            'accept-language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+            'content-type': 'application/json;charset=UTF-8',
+            'origin': 'https://app.robbyson.com',
+            'priority': 'u=1, i',
+            'referer': 'https://app.robbyson.com/',
+            'sec-ch-ua': '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
+            'sec-ch-ua-mobile': '?1',
+            'sec-ch-ua-platform': '"Android"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'sessionkey': token,
+            'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36',
+            'x-system-id': '2',
+        }
 
-    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + str(response_disable.status_code) + " - Post do disable")
-    write_log(response_disable.text)
+        response_disable = session.post('https://api.robbyson.com/goal/disableMany', headers=headers_post, json={
+                "_ids": ids
+            }, timeout=60
+        )
 
-    if response_disable.status_code != 200:
-        raise Exception(response_disable.text)
+        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " :: " + str(response_disable.status_code) + " - Post do disable ::")
+        write_log(response_disable.text)
 
-    time.sleep(1)
+        if response_disable.status_code != 200:
+            raise Exception(response_disable.text)
+
+        time.sleep(1)
 
     return response_disable.json()
 
@@ -129,7 +124,7 @@ def main(username, password, is_alteration, CT):
             TOKEN = get_session_key(username, password)
 
         try:
-            search_attribute(session, TOKEN, '901', '01/06/2026', 'TEST ATTRIBUTE') # to validate the session token
+            search_attribute(session, TOKEN, '06/2026', 'TEST ATTRIBUTE') # to validate the session token
             notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Token obtido do json validado com sucesso ::")
             deslig_proxy = resource_path("desligar_proxy.bat")
             proxy_inactive = subprocess.run(deslig_proxy, shell=True)
@@ -137,7 +132,7 @@ def main(username, password, is_alteration, CT):
                 notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Falha ao desligar proxy, verifique o arquivo ligar_proxy.bat :: ")
                 exit()
         except Exception as e:
-            if 'token' in str(e) or 'session' in str(e):
+            if 'token' in str(e).lower() or 'session' in str(e).lower():
                 notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Token do json expirado, obtendo um novo token :: ")
                 write_log("\n:: erro_token ::\n" + str(e))
                 TOKEN = get_session_key(username, password)
@@ -156,13 +151,12 @@ def main(username, password, is_alteration, CT):
 
         if is_alteration:
             df = pd.read_excel("ImportacaoMatriz.xls", sheet_name="Plan1")
-            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Iniciando desativação para {len(df.index)} linhas em 10 segundos.\nPrimeiro atributo do arquivo: {df.iloc[0]['ATRIBUTOS']} :: ")
+            mes_ano = datetime.now().strftime("%m/%Y")
+            atributos = df["ATRIBUTOS"].drop_duplicates().tolist()
+            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Desativando os seguinte atributos em 10 segundos:\n{atributos} ::")
             time.sleep(10)
-            for indice, row in df.iterrows():
-                if pd.isna(row["INDICADOR"]) or pd.isna(row["ATRIBUTOS"]) or pd.isna(row["DATA_INICIO"]) or pd.isna(row["DATA_FIM"]) or pd.isna(row["VALOR_META"]) or pd.isna(row["ATIVO"]):
-                    notify(f":: Problema encontrado na linha {indice}, valide o arquivo e execute novamente :: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                    return
-                disable_attribute(session, TOKEN, row["INDICADOR"], row['DATA_INICIO'], row["ATRIBUTOS"])
+            for atributo in atributos:
+                disable_attribute(session, TOKEN, mes_ano, atributo)
         
         ### PASSO 1
 
