@@ -39,18 +39,23 @@ def normalize(rows):
 def run_aec(days):
 
     try:
-
         CONN_PG = create_connection(os.getenv("HOST_RETORNO"), os.getenv("PORTA_RETORNO"), os.getenv("POSTGRES_DATABASE"), os.getenv("USER_RETORNO"), os.getenv("PASSWORD_RETORNO"))
         #CONN_PG = create_connection(os.getenv("LOCAL_HOST"), os.getenv("LOCAL_PORT"), os.getenv("POSTGRES_DATABASE"), os.getenv("POSTGRES_USER"), os.getenv("POSTGRES_PASSWORD"))
         CURSOR_PG = CONN_PG.cursor()
+    except Exception as e:
+        write_log(f"Erro ao criar conexão postgre: {str(e)} - AEC...")
 
-        for offset in range(days, 0, -1):
-
+    for offset in range(days, 0, -1):
+        dia = None
+        try:
             write_log(f"Offset: {offset} - AEC...")
-            # if offset == 15:
-            #     break
 
             dia = date.today() - timedelta(days=offset)
+
+            # if offset == 2:
+            #     raise Exception("Erro teste aec")
+            #     break
+            
             CURSOR_SQL.execute("""delete from rby.performance_python_log where day = ? and type = 'AEC'""", (dia,))
             write_log(f"Dados deletados da rby.performance_python_log para o dia {dia} - AEC...")
 
@@ -59,17 +64,30 @@ def run_aec(days):
             fim = time.time()
 
             write_log(f"{int(fim - inicio)} segundos para processar o dia {dia} - AEC...")
+        except Exception as e:
+            write_log(f"Erro ({e}) ao processar o dia {dia} - AEC...")
+            CURSOR_SQL.execute("""
+            UPDATE dbo.LogReplicacaoRby
+            SET DataFim = GETDATE(),
+                Erro = ?
+            WHERE Data = ?
+            AND Objeto = 'rby.performance'
+            AND Ambiente = 'AEC'
+            and DataInicio = (SELECT max(DataInicio) from LogReplicacaoRby where Data = ? AND Objeto = 'rby.performance' AND Ambiente = 'AEC')
+            """, (str(e), dia, dia))
+            continue
 
-    except Exception as e:
-        write_log(str(e))
-    
-    finally:
+    try:
         CURSOR_PG.close()
         CONN_PG.close()
         write_log("Conexão com postgre finalizada com sucesso - AEC...")
+    except:
+        pass
 
 
 def sync_day_aec(dia, cursor_pg):
+
+    CURSOR_SQL.execute(f"""INSERT INTO dbo.LogReplicacaoRby (Data, Objeto, DataInicio, DataFim, Linhas, Erro, Ambiente) VALUES ('{dia}', 'rby.performance', GETDATE(), NULL, NULL, NULL, 'AEC');""")
 
     CURSOR_SQL.execute("""
                             insert into rby.performance_python_log values
@@ -77,6 +95,9 @@ def sync_day_aec(dia, cursor_pg):
                             """,(dia,))
 
     write_log(f"Processando o dia {dia} - AEC...")
+
+    # if dia == date.today() - timedelta(days=1):
+    #     raise Exception("Erro teste aec")
 
     cursor_pg.execute(
         """
@@ -89,7 +110,7 @@ def sync_day_aec(dia, cursor_pg):
             COALESCE(chave_externa_diretor_de_atendimento, 0) AS chave_externa_diretor_de_atendimento,
             --COALESCE(chave_externa_diretor_atendimento, 0) AS chave_externa_diretor_de_atendimento,
             COALESCE(chave_externa_diretor, 0) AS chave_externa_diretor,
-            segmento,
+            UPPER(segmento) as segmento,
             id_indicador,
             nome_indicador,
             resultado,
@@ -121,7 +142,7 @@ def sync_day_aec(dia, cursor_pg):
         delete_day_aec(dia)
 
         INSERT_SQL = """
-            INSERT INTO rby.performance_python (
+            INSERT INTO rby.performance (
             data,
             chave_externa,
             chave_externa_supervisor,
@@ -173,9 +194,9 @@ def sync_day_aec(dia, cursor_pg):
         CURSOR_SQL.execute(
             """
             SELECT COUNT(*)
-            FROM rby.performance_python
+            FROM rby.performance
             WHERE data = ?
-            and segmento not like '%santander%'
+            and segmento not like 'premium - %santander%'
             """,
             (dia,)
         )
@@ -189,6 +210,16 @@ def sync_day_aec(dia, cursor_pg):
                 f"diferente da quantidade de linhas na tabela "
                 f"({count_rows})"
             )
+
+        CURSOR_SQL.execute("""
+        UPDATE dbo.LogReplicacaoRby
+        SET DataFim = GETDATE(),
+        Linhas = ?
+        WHERE Data = ?
+        AND Objeto = 'rby.performance'
+        AND Ambiente = 'AEC'
+        and DataInicio = (SELECT max(DataInicio) from LogReplicacaoRby where Data = ? AND Objeto = 'rby.performance' AND Ambiente = 'AEC')
+        """, (lines, dia, dia))
         
         CURSOR_SQL.execute("""
                             update rby.performance_python_log
@@ -214,17 +245,21 @@ def sync_day_aec(dia, cursor_pg):
 def run_santander(days):
 
     try:
-
         CONN_PG = create_connection(os.getenv("HOST_RETORNO_SANTANDER"), os.getenv("PORTA_RETORNO_SANTANDER"), os.getenv("POSTGRES_DATABASE"), os.getenv("USER_RETORNO_SANTANDER"), os.getenv("PASSWORD_RETORNO_SANTANDER"))
         CURSOR_PG = CONN_PG.cursor()
+    except Exception as e:
+        write_log(F"Erro ao criar conexão postgre: {str(e)} - SANTANDER...")
 
-        for offset in range(days, 0, -1):
-
+    for offset in range(days, 0, -1):
+        try:
             write_log(f"Offset: {offset} - SANTANDER...")
-            # if offset == 15:
-            #     break
-
+            
             dia = date.today() - timedelta(days=offset)
+
+            # if offset == 2:
+            #     raise Exception("Erro teste santander")
+            #     break
+            
             CURSOR_SQL.execute("""delete from rby.performance_python_log where day = ? and type = 'SANTANDER'""", (dia,))
             write_log(f"Dados deletados da rby.performance_python_log para o dia {dia} - SANTANDER...")
 
@@ -233,17 +268,30 @@ def run_santander(days):
             fim = time.time()
 
             write_log(f"{int(fim - inicio)} segundos para processar o dia {dia} - SANTANDER...")
+        except Exception as e:
+            write_log(f"Erro ({e}) ao processar o dia {dia} - SANTANDER...")
+            CURSOR_SQL.execute("""
+            UPDATE dbo.LogReplicacaoRby
+            SET DataFim = GETDATE(),
+                Erro = ?
+            WHERE Data = ?
+            AND Objeto = 'rby.performance'
+            AND Ambiente = 'SANTANDER'
+            and DataInicio = (SELECT max(DataInicio) from LogReplicacaoRby where Data = ? AND Objeto = 'rby.performance' AND Ambiente = 'SANTANDER')
+            """, (str(e), dia, dia))
+            continue
 
-    except Exception as e:
-        write_log(str(e))
-    
-    finally:
+    try:
         CURSOR_PG.close()
         CONN_PG.close()
         write_log("Conexão com postgre finalizada com sucesso - SANTANDER...")
+    except:
+        pass
 
 
 def sync_day_santander(dia, cursor_pg):
+
+    CURSOR_SQL.execute(f"""INSERT INTO dbo.LogReplicacaoRby (Data, Objeto, DataInicio, DataFim, Linhas, Erro, Ambiente) VALUES ('{dia}', 'rby.performance', GETDATE(), NULL, NULL, NULL, 'SANTANDER');""")
 
     CURSOR_SQL.execute("""
                             insert into rby.performance_python_log values
@@ -251,6 +299,9 @@ def sync_day_santander(dia, cursor_pg):
                             """,(dia,))
 
     write_log(f"Processando o dia {dia} - SANTANDER...")
+
+    # if dia == date.today() - timedelta(days=1):
+    #     raise Exception("Erro teste santander")
 
     cursor_pg.execute(
         """
@@ -262,7 +313,7 @@ def sync_day_santander(dia, cursor_pg):
             COALESCE(REPLACE(chave_externa_superintendente, 'SEM INFORMAÇÃO', '0'), '0')::int AS chave_externa_gerente_executivo,
             COALESCE(REPLACE(chave_externa_diretor_de_atendimento, 'SEM INFORMAÇÃO', '0'), '0')::int AS chave_externa_diretor_de_atendimento,
             COALESCE(REPLACE(chave_externa_diretor, 'SEM INFORMAÇÃO', '0'), '0')::int AS chave_externa_diretor,
-            segmento,
+            UPPER(segmento) as segmento,
             id_indicador::int,
             nome_indicador,
             REPLACE(resultado, ',', '.')::float as resultado,
@@ -293,7 +344,7 @@ def sync_day_santander(dia, cursor_pg):
         delete_day_santander(dia)
 
         INSERT_SQL = """
-            INSERT INTO rby.performance_python (
+            INSERT INTO rby.performance (
             data,
             chave_externa,
             chave_externa_supervisor,
@@ -345,9 +396,9 @@ def sync_day_santander(dia, cursor_pg):
         CURSOR_SQL.execute(
             """
             SELECT COUNT(*)
-            FROM rby.performance_python
+            FROM rby.performance
             WHERE data = ?
-            AND segmento like '%santander%'
+            AND segmento like 'premium - %santander%'
             """,
             (dia,)
         )
@@ -361,6 +412,16 @@ def sync_day_santander(dia, cursor_pg):
                 f"diferente da quantidade de linhas na tabela "
                 f"({count_rows})"
             )
+
+        CURSOR_SQL.execute("""
+        UPDATE dbo.LogReplicacaoRby
+        SET DataFim = GETDATE(),
+        Linhas = ?
+        WHERE Data = ?
+        AND Objeto = 'rby.performance'
+        AND Ambiente = 'SANTANDER'
+        and DataInicio = (SELECT max(DataInicio) from LogReplicacaoRby where Data = ? AND Objeto = 'rby.performance' AND Ambiente = 'SANTANDER')
+        """, (lines, dia, dia))
         
         CURSOR_SQL.execute("""
                             update rby.performance_python_log

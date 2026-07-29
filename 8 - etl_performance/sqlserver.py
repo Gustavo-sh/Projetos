@@ -28,9 +28,9 @@ def delete_day_aec(dia):
         CURSOR_SQL.execute(
             """
             DELETE TOP (10000)
-            FROM rby.performance_python
+            FROM rby.performance
             WHERE data = ?
-            and segmento not like '%santander%'
+            and segmento not like 'premium - %santander%'
             """,
             dia
         )
@@ -50,9 +50,9 @@ def delete_day_santander(dia):
         CURSOR_SQL.execute(
             """
             DELETE TOP (10000)
-            FROM rby.performance_python
+            FROM rby.performance
             WHERE data = ?
-            and segmento like '%santander%'
+            and segmento like 'premium - %santander%'
             """,
             dia
         )

@@ -1,6 +1,6 @@
 from tunnel import start_tunnel, kill_existing_tunnel
 from utils import write_log
-from sqlserver import CONN_SQL, CURSOR_SQL, commit
+from sqlserver import CONN_SQL, CURSOR_SQL, commit, rollback
 from sync import run_aec, run_santander
 from datetime import datetime, time
 
@@ -12,9 +12,9 @@ def main():
 
         #start_tunnel()
 
-        CURSOR_SQL.execute("""insert into dbo.Historicos_Procedures values('ETL_Performance_Python_D45', GETDATE(), null, 'Performance Python', 'D45')""")
+        CURSOR_SQL.execute("""insert into dbo.Historicos_Procedures values('ETL_Performance_Python_D45', GETDATE(), null, 'Performance', 'D45')""")
         write_log("Iniciando disable do indice...")
-        CURSOR_SQL.execute("""alter index NonClusteredColumnStore on rby.performance_python DISABLE""")
+        CURSOR_SQL.execute("""alter index NonClusteredColumnStore on rby.performance DISABLE""")
         write_log("Disable do indice finalizado...")
 
         write_log("D45 entrando em etapa de execução...")
@@ -23,12 +23,21 @@ def main():
         run_santander(46)
 
         write_log("Iniciando rebuild o indice...")
-        CURSOR_SQL.execute("""alter index NonClusteredColumnStore on rby.performance_python rebuild""")
+        CURSOR_SQL.execute("""alter index NonClusteredColumnStore on rby.performance rebuild""")
         write_log("Rebuild o indice finalizado...")
         REBUILDED = True
 
         CURSOR_SQL.execute("""update dbo.Historicos_Procedures SET Data_Fim = GETDATE() WHERE Nome = 'ETL_Performance_Python_D45' and cast(data_inicio as date) = cast(getdate() as date) and data_inicio = (select max(data_inicio) from dbo.historicos_Procedures (nolock) where nome = 'ETL_Performance_Python_D45')""")
         commit()
+        try:
+            write_log(f"Iniciando chamada da sp_todos_Exec1_Py...")
+            CURSOR_SQL.execute("""exec sp_todos_Exec1_Py""")
+            commit()
+            write_log(f"sp_todos_Exec1_Py finalizada...")
+        except Exception as e:
+            #rollback()
+            write_log(f"Erro na execução da sp_todos_Exec1_Py: {str(e)}")
+            commit()
 
     except Exception as e:
         write_log(f"Erro na ETL: {str(e)}")
@@ -38,7 +47,7 @@ def main():
         try:
             if not REBUILDED:
                 write_log("Iniciando rebuild o indice após exception...")
-                CURSOR_SQL.execute("""alter index NonClusteredColumnStore on rby.performance_python rebuild""")
+                CURSOR_SQL.execute("""alter index NonClusteredColumnStore on rby.performance rebuild""")
                 write_log("Rebuild o indice finalizado...")
             CURSOR_SQL.close()
             CONN_SQL.close()
