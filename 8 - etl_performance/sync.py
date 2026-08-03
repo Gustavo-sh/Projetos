@@ -44,6 +44,7 @@ def run_aec(days):
         CURSOR_PG = CONN_PG.cursor()
     except Exception as e:
         write_log(f"Erro ao criar conexão postgre: {str(e)} - AEC...")
+        return
 
     for offset in range(days, 0, -1):
         dia = None
@@ -249,6 +250,7 @@ def run_santander(days):
         CURSOR_PG = CONN_PG.cursor()
     except Exception as e:
         write_log(F"Erro ao criar conexão postgre: {str(e)} - SANTANDER...")
+        return
 
     for offset in range(days, 0, -1):
         try:
@@ -314,7 +316,7 @@ def sync_day_santander(dia, cursor_pg):
             COALESCE(REPLACE(chave_externa_diretor_de_atendimento, 'SEM INFORMAÇÃO', '0'), '0')::int AS chave_externa_diretor_de_atendimento,
             COALESCE(REPLACE(chave_externa_diretor, 'SEM INFORMAÇÃO', '0'), '0')::int AS chave_externa_diretor,
             UPPER(segmento) as segmento,
-            id_indicador::int,
+            (CASE WHEN id_indicador = -5 THEN 34 WHEN id_indicador = -1 THEN 86 ELSE id_indicador END)::int as id_indicador,
             nome_indicador,
             REPLACE(resultado, ',', '.')::float as resultado,
             REPLACE(fator, ',', '.')::float as fator,

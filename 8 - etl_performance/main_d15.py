@@ -36,9 +36,7 @@ def main():
             commit()
             write_log(f"sp_todos_Exec_Py finalizada...")
         except Exception as e:
-            #rollback()
             write_log(f"Erro na execução da sp_todos_Exec_Py: {str(e)}")
-            commit()
 
     except Exception as e:
         write_log(f"Erro na ETL: {str(e)}")
