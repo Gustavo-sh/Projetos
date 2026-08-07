@@ -50,7 +50,7 @@ def search_attribute(session, token, mes_ano, atributo):
 
 def disable_attribute(session, token, mes_ano, atributo):
 
-    for _ in range(2):
+    for _ in range(3):
 
         data = search_attribute(session, token, mes_ano, atributo)
         
