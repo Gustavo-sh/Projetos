@@ -18,9 +18,9 @@ CONTROL = defaultdict(int)
 
 try:
     now = datetime.now()
-    retry = True
-    while now < datetime(now.year, now.month, now.day, 13, 0, 0) and retry:
-        retry = False
+    #retry = True
+    while now < datetime(now.year, now.month, now.day, 12, 0, 0) and retry:
+        #retry = False
         url = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token"
 
         payload = {
@@ -86,11 +86,11 @@ try:
 
                 if response_refresh.status_code in [200, 202]:
                     CONTROL[dataset_name] += 1
-                    print(f"Refresh iniciado em {dataset_name}, esperando 3 minutos antes de continuar...")
-                    time.sleep(180)
+                    notify_whatsapp(f"Refresh iniciado em {dataset_name}, esperando 5 minutos antes de continuar...")
+                    time.sleep(300)
                 else:
-                    print(f"Refresh falhou em {dataset_name}\nText: {response_refresh.text}")
-        time.sleep(180)
+                    notify_whatsapp(f"Refresh falhou em {dataset_name}\nText: {response_refresh.text}")
+        time.sleep(300)
         now = datetime.now()
             
 except Exception as e:

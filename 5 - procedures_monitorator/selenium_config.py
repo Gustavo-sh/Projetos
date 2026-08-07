@@ -6,12 +6,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pyperclip
 from utils import logging_msg
+import time
 
 def create_webdriver():
 
     options = Options()
     options.add_argument(r"user-data-dir=C:\chrome-selenium-profile")
     options.add_argument("--start-maximized")
+    options.add_argument("--headless")
     driver = webdriver.Chrome(options=options)
     wait = WebDriverWait(driver, 60)
     
@@ -22,12 +24,13 @@ def send_message_whatsapp(wait, msg):
     for attempt in range(max_retries):
         try:
             # Campo de mensagem
-            msg_box = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[1]/div/div/div/div/div[3]/div/div[4]/div/footer/div[1]/div/span/div/div/div/div[3]/div[1]/p')))
+            msg_box = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div/div/div/div/div[3]/div/div[4]/div/footer/div[1]/div/span/div/div/div/div[3]/div[1]/p')))
             pyperclip.copy(msg)
             # Envia mensagem
             msg_box.click()
             msg_box.send_keys(Keys.CONTROL + "v")
             msg_box.send_keys(Keys.ENTER)
+            time.sleep(1)
             break
         except Exception as e:
             logging_msg(f"Ocorreu um erro ao enviar a mensagem no WhatsApp: {str(e)}")
