@@ -3,7 +3,7 @@ import os
 from utils import write_log
 from datetime import timedelta
 from datetime import date
-from sqlserver import CONN_SQL, CURSOR_SQL, commit
+from sqlserver import CONN_SQL, CURSOR_SQL, commit 
 
 def validation_aec():
     try:
@@ -44,7 +44,7 @@ def validation_aec():
                 else:
                     continue
 
-                CURSOR_SQL.execute("insert into rby.performance_validation values (?, ?, ?)", (data, linhas, 'AEC'))
+                CURSOR_SQL.execute("insert into rby.performance_validation values (?, ?, ?)", (data, linhas, 'GERAL'))
 
             except Exception as e:
                 write_log(f"Erro ({e}) ao processar o dia {dia} - AEC...")
