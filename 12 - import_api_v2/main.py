@@ -1,4 +1,4 @@
-from connect_db import exec_generator, update_sistema_matriz
+from connect_db import exec_generator, update_importado_sistema_matriz
 from file_manager import generate_files
 from api import import_api
 from utils import notify
@@ -10,9 +10,12 @@ load_dotenv(r"C:\Users\e.gustavo.santos\Documents\Github\Projetos\12 - import_ap
 def main():
     try:
         importacao, alteracao = exec_generator()
-        generate_files(importacao, alteracao)
+        if importacao or alteracao:
+            print(f"Gerando {len(importacao)+len(alteracao)} linhas para importações no total.")
+            generate_files(importacao, alteracao)
         import_api(os.getenv("USERNAME"), os.getenv("PASSWORD"))
-        update_sistema_matriz()
+        update_importado_sistema_matriz()
+        notify("\nUpdate do importado efetuado, encerrando a automação...")
     except Exception as e:
         notify(f"Erro geral no orquestrador: {e}")
         raise

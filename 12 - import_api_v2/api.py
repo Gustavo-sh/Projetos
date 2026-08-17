@@ -241,7 +241,7 @@ def import_file(session, base_url, file_path, token):
     notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+f" :: Delete importing cache (passo 4) realizado com sucesso - status code: {response_delete.status_code} ::")
     write_log("\n:: text do delete importing cache ::\n" + response_delete.text)
 
-    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Automacao encerrada :: ")
+    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Envio Robbyson encerrado :: ")
 
 def import_api(username, password):
     try:

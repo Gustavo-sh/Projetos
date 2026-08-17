@@ -922,6 +922,19 @@ drop table #first_importation
 drop table #alterations
 """
 
+gerador_update_coletado = """
+update robbysonmatriz.dbo.sistema_matriz
+set
+    matriz_coletada = 1
+where 
+    importado = 0
+    and importacao_valida = 1
+    and matriz_coletada = 0
+    and periodo = dateadd(d, 1, eomonth(getdate(), -1))
+    and ativo in (0, 1, 3)
+    and atributo in (select distinct atributo from robbysonmatriz.dbo.publico_piloto_sistema_matriz (nolock))
+"""
+
 def exec_generator():
     importacoes = []
     alteracoes = []
@@ -971,6 +984,7 @@ def exec_generator():
             ]
 
             cur.execute(gerador_drops)
+            cur.execute(gerador_update_coletado)
 
             CONN.commit()
 
@@ -985,19 +999,19 @@ def exec_generator():
             if cur is not None:
                 cur.close()
 
-def update_sistema_matriz():
+def update_importado_sistema_matriz():
     with pyodbc.connect(CONNECTION_STRING) as CONN:
         cur = None
         try:
             cur = CONN.cursor()
             cur.execute("""
-                update robbysonmatriz.dbo.sistema_matriz
-                set
-                    matriz_coletada = 1, importado = 1, data_importacao = getdate()
+                update robbysonmatriz.dbo.sistema_matriz 
+                set importado = 1,
+                    data_importacao = getdate()
                 where 
                     importado = 0
                     and importacao_valida = 1
-                    and matriz_coletada = 0
+                    and matriz_coletada = 1
                     and periodo = dateadd(d, 1, eomonth(getdate(), -1))
                     and ativo in (0, 1, 3)
                     and atributo in (select distinct atributo from robbysonmatriz.dbo.publico_piloto_sistema_matriz (nolock))
