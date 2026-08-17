@@ -13,7 +13,6 @@ try:
     with pyodbc.connect(CONNECTION_STRING) as conn:
 
         cursor = conn.cursor()
-        cursor.timeout = 0
 
         cursor.execute("SELECT @@SPID")
         spid = cursor.fetchone()[0]

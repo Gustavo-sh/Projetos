@@ -17,18 +17,18 @@ def validation_aec():
     select
         data,
         count(1) as linhas
-    FROM public.performance_view
+    FROM public.performance
     where data = %s
     and id_indicador = 34
     and segmento not ilike %s
     group by data, id_indicador
     """
 
-    write_log("Iniciando Validation AeC -50...")
+    write_log("Iniciando Validation AeC -75...")
 
     try:
 
-        for offset in range(50, 0, -1):
+        for offset in range(75, 0, -1):
             dia = None
             try:
                 write_log(f"Offset Validation: {offset} - AEC...")
@@ -75,11 +75,11 @@ def validation_santander():
     group by data, id_indicador
     """
 
-    write_log("Iniciando Validation Santander -50...")
+    write_log("Iniciando Validation Santander -75...")
 
     try: 
 
-        for offset in range(50, 0, -1):
+        for offset in range(75, 0, -1):
             dia = None
             try:
                 write_log(f"Offset Validation: {offset} - Santander...")
@@ -107,6 +107,7 @@ def validation_santander():
 
 def main():
     try:
+        CURSOR_SQL.execute("""insert into dbo.Historicos_Procedures values('Validation_Performance_Python', GETDATE(), null, 'Validation Performance', 'D75')""")
         CURSOR_SQL.execute("truncate table rby.performance_validation")
         commit()
         try:
@@ -118,6 +119,8 @@ def main():
         except Exception as e:
             write_log(f"Erro na validation Santander: {str(e)}")
         write_log("Validation finalizada.")
+        CURSOR_SQL.execute("""update dbo.Historicos_Procedures SET Data_Fim = GETDATE() WHERE Nome = 'Validation_Performance_Python' and cast(data_inicio as date) = cast(getdate() as date) and data_inicio = (select max(data_inicio) from dbo.historicos_Procedures (nolock) where nome = 'Validation_Performance_Python')""")
+        commit()
     finally:
         CURSOR_SQL.close()
         CONN_SQL.close()

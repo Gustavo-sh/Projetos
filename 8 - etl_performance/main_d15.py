@@ -3,6 +3,8 @@ from utils import write_log
 from sqlserver import CONN_SQL, CURSOR_SQL, commit, rollback
 from sync import run_aec, run_santander
 from datetime import datetime, time
+from etl_sync import run_specific_range
+import os
 
 def main():
 
@@ -14,6 +16,7 @@ def main():
         "dbo.sp_ins_rel1",
         "dbo.sp_ins_rel2",
         "dbo.sp_ins_rel3",
+        "dbo.Sp_Ins_ReincidenciaDeGrupos",
         "dbo.sp_Ins_IGD",
         "dbo.sp_ins_indice_evolucao",
         "rlt.Sp_Ins_CheckPoint_D10",
@@ -37,8 +40,41 @@ def main():
 
         write_log("D15 entrando em etapa de execução...")
 
-        run_aec(16)
-        run_santander(16)
+        # run_aec(16)
+        # run_santander(16)
+        run_specific_range(16,                                       # range start
+                           0,                                       # range end
+                           None,                           # indicadores para consultar postgre
+                           None,                           # indicadores para consultar e deletar sql
+                           os.getenv("HOST_RETORNO"),
+                           os.getenv("PORTA_RETORNO"), 
+                           os.getenv("POSTGRES_DATABASE"), 
+                           os.getenv("USER_RETORNO"), 
+                           os.getenv("PASSWORD_RETORNO"), 
+                           "AEC"                                      # ambiente ("AEC" OU "SANTANDER")
+                           )
+        run_specific_range(16,                                       # range start
+                           0,                                       # range end
+                           None,                           # indicadores para consultar postgre
+                           None,                           # indicadores para consultar e deletar sql
+                           os.getenv("HOST_RETORNO_SANTANDER"), 
+                           os.getenv("PORTA_RETORNO_SANTANDER"), 
+                           os.getenv("POSTGRES_DATABASE"), 
+                           os.getenv("USER_RETORNO_SANTANDER"), 
+                           os.getenv("PASSWORD_RETORNO_SANTANDER"), 
+                           "SANTANDER"                              # ambiente ("AEC" OU "SANTANDER")
+                           )
+        # run_specific_range(4,                                       # range start
+        #                    4,                                       # range end
+        #                    [901, -5, 43],                           # indicadores para consultar postgre
+        #                    [901, 34, 43],                           # indicadores para consultar e deletar sql
+        #                    os.getenv("HOST_RETORNO_SANTANDER"), 
+        #                    os.getenv("PORTA_RETORNO_SANTANDER"), 
+        #                    os.getenv("POSTGRES_DATABASE"), 
+        #                    os.getenv("USER_RETORNO_SANTANDER"), 
+        #                    os.getenv("PASSWORD_RETORNO_SANTANDER"), 
+        #                    "SANTANDER"                              # ambiente ("AEC" OU "SANTANDER")
+        #                    )
 
         # if datetime.now().time() < time(7, 0):
         #     write_log("Iniciando rebuild o indice...")

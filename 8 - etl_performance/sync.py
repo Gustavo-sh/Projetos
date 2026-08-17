@@ -57,9 +57,6 @@ def run_aec(days):
             #     raise Exception("Erro teste aec")
             #     break
             
-            CURSOR_SQL.execute("""delete from rby.performance_python_log where day = ? and type = 'AEC'""", (dia,))
-            write_log(f"Dados deletados da rby.performance_python_log para o dia {dia} - AEC...")
-
             inicio = time.time()
             sync_day_aec(dia, CURSOR_PG)
             fim = time.time()
@@ -89,11 +86,6 @@ def run_aec(days):
 def sync_day_aec(dia, cursor_pg):
 
     CURSOR_SQL.execute(f"""INSERT INTO dbo.LogReplicacaoRby (Data, Objeto, DataInicio, DataFim, Linhas, Erro, Ambiente) VALUES ('{dia}', 'rby.performance', GETDATE(), NULL, NULL, NULL, 'AEC');""")
-
-    CURSOR_SQL.execute("""
-                            insert into rby.performance_python_log values
-                            (?,getdate(),NULL,NULL,'AEC')
-                            """,(dia,))
 
     write_log(f"Processando o dia {dia} - AEC...")
 
@@ -221,14 +213,7 @@ def sync_day_aec(dia, cursor_pg):
         AND Ambiente = 'AEC'
         and DataInicio = (SELECT max(DataInicio) from LogReplicacaoRby where Data = ? AND Objeto = 'rby.performance' AND Ambiente = 'AEC')
         """, (lines, dia, dia))
-        
-        CURSOR_SQL.execute("""
-                            update rby.performance_python_log
-                            set end_time = getdate(), lines = ?
-                            where day = ? and type = 'AEC'
-                            """,(lines,dia,))
-        write_log(f"Data fim e linhas atualizado na rby.performance_python_log para o dia {dia} - AEC...")
-        
+                
         commit()
 
     except:
@@ -262,9 +247,6 @@ def run_santander(days):
             #     raise Exception("Erro teste santander")
             #     break
             
-            CURSOR_SQL.execute("""delete from rby.performance_python_log where day = ? and type = 'SANTANDER'""", (dia,))
-            write_log(f"Dados deletados da rby.performance_python_log para o dia {dia} - SANTANDER...")
-
             inicio = time.time()
             sync_day_santander(dia, CURSOR_PG)
             fim = time.time()
@@ -294,11 +276,6 @@ def run_santander(days):
 def sync_day_santander(dia, cursor_pg):
 
     CURSOR_SQL.execute(f"""INSERT INTO dbo.LogReplicacaoRby (Data, Objeto, DataInicio, DataFim, Linhas, Erro, Ambiente) VALUES ('{dia}', 'rby.performance', GETDATE(), NULL, NULL, NULL, 'SANTANDER');""")
-
-    CURSOR_SQL.execute("""
-                            insert into rby.performance_python_log values
-                            (?,getdate(),NULL,NULL,'SANTANDER')
-                            """,(dia,))
 
     write_log(f"Processando o dia {dia} - SANTANDER...")
 
@@ -424,13 +401,6 @@ def sync_day_santander(dia, cursor_pg):
         AND Ambiente = 'SANTANDER'
         and DataInicio = (SELECT max(DataInicio) from LogReplicacaoRby where Data = ? AND Objeto = 'rby.performance' AND Ambiente = 'SANTANDER')
         """, (lines, dia, dia))
-        
-        CURSOR_SQL.execute("""
-                            update rby.performance_python_log
-                            set end_time = getdate(), lines = ?
-                            where day = ? and type = 'SANTANDER'
-                            """,(lines,dia,))
-        write_log(f"Data fim e linhas atualizado na rby.performance_python_log para o dia {dia} - SANTANDER...")
         
         commit()
 

@@ -2,7 +2,9 @@ from tunnel import start_tunnel, kill_existing_tunnel
 from utils import write_log
 from sqlserver import CONN_SQL, CURSOR_SQL, commit, rollback
 from sync import run_aec, run_santander
+from etl_sync import run_specific_range
 from datetime import datetime, time
+import os
 
 def main():
 
@@ -15,6 +17,7 @@ def main():
         "dbo.sp_ins_rel11",
         "dbo.sp_ins_rel2",
         "dbo.sp_ins_rel31",
+        "dbo.Sp_Ins_ReincidenciaDeGrupos",
         "dbo.sp_ins_indice_evolucao",
         "rlt.Sp_Ins_CheckPoint_D45",
         "dbo.SP_Ins_Gamification_D45",
@@ -37,8 +40,30 @@ def main():
 
         write_log("D45 entrando em etapa de execução...")
 
-        run_aec(46)
-        run_santander(46)
+        # run_aec(46)
+        # run_santander(46)
+        run_specific_range(46,                                       # range start
+                            0,                                       # range end
+                            None,                           # indicadores para consultar postgre
+                            None,                           # indicadores para consultar e deletar sql
+                            os.getenv("HOST_RETORNO"),
+                            os.getenv("PORTA_RETORNO"), 
+                            os.getenv("POSTGRES_DATABASE"), 
+                            os.getenv("USER_RETORNO"), 
+                            os.getenv("PASSWORD_RETORNO"), 
+                            "AEC"                                      # ambiente ("AEC" OU "SANTANDER")
+                            )
+        run_specific_range(46,                                       # range start
+                            0,                                       # range end
+                            None,                           # indicadores para consultar postgre
+                            None,                           # indicadores para consultar e deletar sql
+                            os.getenv("HOST_RETORNO_SANTANDER"), 
+                            os.getenv("PORTA_RETORNO_SANTANDER"), 
+                            os.getenv("POSTGRES_DATABASE"), 
+                            os.getenv("USER_RETORNO_SANTANDER"), 
+                            os.getenv("PASSWORD_RETORNO_SANTANDER"), 
+                            "SANTANDER"                              # ambiente ("AEC" OU "SANTANDER")
+                            )
 
         # write_log("Iniciando rebuild o indice...")
         # CURSOR_SQL.execute("""alter index NonClusteredColumnStore on rby.performance rebuild""")

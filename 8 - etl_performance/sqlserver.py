@@ -62,6 +62,45 @@ def delete_day_santander(dia):
 
     write_log(f"Dia {dia} deletado...")
 
+def delete_day_indicators(dia, environ, indicators):
+
+    str_like = ""
+    if environ == "AEC":
+        str_like = "segmento not like 'premium - %santander%'"
+    elif environ == "SANTANDER":
+        str_like = "segmento like 'premium - %santander%'"
+
+    sql = f"""
+        DELETE TOP (10000)
+        FROM rby.performance
+        WHERE data = ?
+        and {str_like}
+        """
+
+    if indicators:
+        placeholders = ", ".join("?" for _ in indicators)
+        sql += f"and id_indicador in ({placeholders})"
+    
+    write_log(f"Deletando {dia} para {environ}...")
+
+    lines = 0
+
+    params = (dia, *indicators) if indicators else (dia,)
+
+    while True:
+
+        CURSOR_SQL.execute(sql,
+            params
+        )
+
+        rowcount = CURSOR_SQL.rowcount
+        lines += rowcount
+
+        if rowcount == 0:
+            break
+
+    write_log(f"Dia {dia} deletado ({lines} linhas) para {environ} (ids {indicators})...")
+
 
 def insert_many(sql, rows, many=True):
 
