@@ -17,18 +17,18 @@ def validation_aec():
     select
         data,
         count(1) as linhas
-    FROM public.performance
+    FROM public.performance_view
     where data = %s
     and id_indicador = 34
     and segmento not ilike %s
     group by data, id_indicador
     """
 
-    write_log("Iniciando Validation AeC -75...")
+    write_log("Iniciando Validation AeC -60...")
 
     try:
 
-        for offset in range(75, 0, -1):
+        for offset in range(60, 0, -1):
             dia = None
             try:
                 write_log(f"Offset Validation: {offset} - AEC...")
@@ -75,11 +75,11 @@ def validation_santander():
     group by data, id_indicador
     """
 
-    write_log("Iniciando Validation Santander -75...")
+    write_log("Iniciando Validation Santander -60...")
 
     try: 
 
-        for offset in range(75, 0, -1):
+        for offset in range(60, 0, -1):
             dia = None
             try:
                 write_log(f"Offset Validation: {offset} - Santander...")
