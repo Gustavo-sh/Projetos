@@ -6,7 +6,6 @@ SELECT
     COALESCE(chave_externa_coordenador, 0) AS chave_externa_coordenador,
     COALESCE(chave_externa_superintendente, 0) AS chave_externa_gerente_executivo,
     COALESCE(chave_externa_diretor_de_atendimento, 0) AS chave_externa_diretor_de_atendimento,
-    --COALESCE(chave_externa_diretor_atendimento, 0) AS chave_externa_diretor_de_atendimento,
     COALESCE(chave_externa_diretor, 0) AS chave_externa_diretor,
     UPPER(segmento) as segmento,
     id_indicador,
@@ -26,7 +25,39 @@ SELECT
     fator_3,
     fator_4
 FROM public.performance_view
---FROM "views".performance_view
+WHERE data=%s
+and id_indicador <> 86
+and nome_nivel_hierarquia = '1'
+and segmento not ilike %s
+"""
+
+VIEW_AEC_REPORTS = f"""
+SELECT
+    data,
+    chave_externa,
+    COALESCE(chave_externa_supervisor, 0) AS chave_externa_supervisor,
+    COALESCE(chave_externa_coordenador, 0) AS chave_externa_coordenador,
+    COALESCE(chave_externa_superintendente, 0) AS chave_externa_gerente_executivo,
+    COALESCE(chave_externa_diretor_atendimento, 0) AS chave_externa_diretor_de_atendimento,
+    COALESCE(chave_externa_diretor, 0) AS chave_externa_diretor,
+    UPPER(segmento) as segmento,
+    id_indicador,
+    nome_indicador,
+    resultado,
+    fator,
+    resultado_calculado,
+    percentual_atingimento,
+    meta,
+    ganho,
+    max_ganho,
+    id_grupo,
+    COALESCE(chave_externa_gerente_jr, 0) AS chave_externa_gerente_jr,
+    COALESCE(chave_externa_gerente_pl, 0) AS chave_externa_gerente_pl,
+    COALESCE(chave_externa_gerente_sr, 0) AS chave_externa_gerente_sr,
+    fator_2,
+    fator_3,
+    fator_4
+FROM "views".performance_view
 WHERE data=%s
 and id_indicador <> 86
 and nome_nivel_hierarquia = '1'

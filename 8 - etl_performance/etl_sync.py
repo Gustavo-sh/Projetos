@@ -3,7 +3,7 @@ from datetime import timedelta
 from decimal import Decimal
 import time
 from utils import write_log
-from sqlserver import CURSOR_SQL, insert_many, commit, rollback, delete_day_indicators
+from sqlserver import CURSOR_SQL, insert_many, commit, rollback, delete_day_indicators_performance
 from querys_pg import VIEW_AEC, TABELA_AEC, VIEW_SANTANDER, get_query_pg
 from postgre import create_connection
 from dotenv import load_dotenv
@@ -37,7 +37,7 @@ def normalize(rows):
 
     return result
 
-def run_specific_range(range_start, range_end, indicators_pg, indicators_sql, host, port, database, username, password, environ):
+def run_specific_range_performance(range_start, range_end, indicators_pg, indicators_sql, host, port, database, username, password, environ):
     try:
         CONN_PG = create_connection(host, port, database, username, password)
         CURSOR_PG = CONN_PG.cursor()
@@ -57,7 +57,7 @@ def run_specific_range(range_start, range_end, indicators_pg, indicators_sql, ho
             write_log(f"Offset: {offset} - {environ}...")
             
             inicio = time.time()
-            sync_specific_day(dia, CURSOR_PG, indicators_pg, indicators_sql, environ)
+            sync_specific_day_performance(dia, CURSOR_PG, indicators_pg, indicators_sql, environ)
             fim = time.time()
 
             write_log(f"{int(fim - inicio)} segundos para processar o dia {dia} - {environ} ids {indicators_sql or ""}...")
@@ -81,7 +81,7 @@ def run_specific_range(range_start, range_end, indicators_pg, indicators_sql, ho
     except:
         pass
 
-def sync_specific_day(dia, cursor_pg, indicators_pg, indicators_sql, environ):
+def sync_specific_day_performance(dia, cursor_pg, indicators_pg, indicators_sql, environ):
 
     CURSOR_SQL.execute(f"""INSERT INTO dbo.LogReplicacaoRby (Data, Objeto, DataInicio, DataFim, Linhas, Erro, Ambiente) VALUES (?, 'rby.performance', GETDATE(), NULL, NULL, NULL, ?);""", (dia, environ))
 
@@ -108,7 +108,7 @@ def sync_specific_day(dia, cursor_pg, indicators_pg, indicators_sql, environ):
                 (dia, "premium - %santander%")
             )
 
-        delete_day_indicators(dia, environ, indicators_sql)
+        delete_day_indicators_performance(dia, environ, indicators_sql)
 
         INSERT_SQL = """
             INSERT INTO rby.performance (

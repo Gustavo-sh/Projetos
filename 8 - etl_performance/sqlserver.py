@@ -18,51 +18,7 @@ CONN_SQL.autocommit = False
 CURSOR_SQL = CONN_SQL.cursor()
 CURSOR_SQL.fast_executemany = True
 
-
-def delete_day_aec(dia):
-
-    write_log(f"Deletando {dia}...")
-
-    while True:
-
-        CURSOR_SQL.execute(
-            """
-            DELETE TOP (10000)
-            FROM rby.performance
-            WHERE data = ?
-            and segmento not like 'premium - %santander%'
-            """,
-            dia
-        )
-
-        if CURSOR_SQL.rowcount == 0:
-            break
-
-    write_log(f"Dia {dia} deletado...")
-
-
-def delete_day_santander(dia):
-
-    write_log(f"Deletando {dia}...")
-
-    while True:
-
-        CURSOR_SQL.execute(
-            """
-            DELETE TOP (10000)
-            FROM rby.performance
-            WHERE data = ?
-            and segmento like 'premium - %santander%'
-            """,
-            dia
-        )
-
-        if CURSOR_SQL.rowcount == 0:
-            break
-
-    write_log(f"Dia {dia} deletado...")
-
-def delete_day_indicators(dia, environ, indicators):
+def delete_day_indicators_performance(dia, environ, indicators):
 
     str_like = ""
     if environ == "AEC":

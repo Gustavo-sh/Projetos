@@ -1,7 +1,7 @@
 from tunnel import start_tunnel, kill_existing_tunnel
 from utils import write_log
 from sqlserver import CONN_SQL, CURSOR_SQL, commit
-from etl_sync import run_specific_range
+from etl_sync import run_specific_range_performance
 import os
 
 def main():
@@ -34,7 +34,7 @@ def main():
 
         write_log("D45 entrando em etapa de execução...")
 
-        run_specific_range(46,                                       # range start
+        run_specific_range_performance(46,                                       # range start
                             0,                                       # range end
                             None,                           # indicadores para consultar postgre
                             None,                           # indicadores para consultar e deletar sql
@@ -45,7 +45,7 @@ def main():
                             os.getenv("PASSWORD_RETORNO"), 
                             "AEC"                                      # ambiente ("AEC" OU "SANTANDER")
                             )
-        run_specific_range(46,                                       # range start
+        run_specific_range_performance(46,                                       # range start
                             0,                                       # range end
                             None,                           # indicadores para consultar postgre
                             None,                           # indicadores para consultar e deletar sql
