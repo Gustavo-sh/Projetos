@@ -75,7 +75,7 @@ WITH base AS (
                 THEN TRY_CAST(meta AS DECIMAL(18,2))
             ELSE NULL
         END AS meta_num
-    FROM robbysonmatriz.dbo.sistema_matriz
+    FROM robbysonmatriz.dbo.sistema_matriz (nolock)
     WHERE
     importado = 0
     and importacao_valida = 1
@@ -676,7 +676,7 @@ CTE_Final_BaseFixos AS (
     LEFT JOIN CTE_Fixos f ON b.id_indicador = f.id_indicador
     WHERE NOT EXISTS (
         SELECT 1 
-        FROM robbysonmatriz.dbo.sistema_matriz mg 
+        FROM robbysonmatriz.dbo.sistema_matriz mg (nolock)
         WHERE mg.id_indicador = b.id_indicador
           AND mg.atributo = b.atributo
           AND mg.data_inicio = b.data_inicio
