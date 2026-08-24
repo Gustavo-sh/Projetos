@@ -33,10 +33,10 @@ def generate_session_key(driver):
     except Exception as e:
         notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Erro ao obter session key :: " + str(e))
     finally:
-        deslig_proxy = resource_path("desligar_proxy.bat")
-        subprocess.run(deslig_proxy, shell=True)
+        # deslig_proxy = resource_path("desligar_proxy.bat")
+        # subprocess.run(deslig_proxy, shell=True)
 
-        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Proxy desligado :: ")
+        # notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Proxy desligado :: ")
 
         try:
             driver.quit()
@@ -44,16 +44,16 @@ def generate_session_key(driver):
             pass
 
 def get_session_key(username, password):
-    proxy_active = subprocess.run(resource_path("ligar_proxy.bat"), shell=True)
-    if proxy_active.returncode != 0:
-        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Falha ao ligar proxy, verifique o arquivo ligar_proxy.bat :: ")
-        raise Exception("Falha ao ligar proxy")
-    time.sleep(1)
+    # proxy_active = subprocess.run(resource_path("ligar_proxy.bat"), shell=True)
+    # if proxy_active.returncode != 0:
+    #     notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Falha ao ligar proxy, verifique o arquivo ligar_proxy.bat :: ")
+    #     raise Exception("Falha ao ligar proxy")
+    # time.sleep(1)
     notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Obtendo session key :: ")
     options = Options()
     options.add_argument("--start-maximized")
     driver = webdriver.Edge(options=options)
-    wait_4m = WebDriverWait(driver, 240)
+    wait_4m = WebDriverWait(driver, 60)
 
     driver.get("https://aec.robbyson.com/administracao/#/login/")
 

@@ -1,4 +1,4 @@
-VIEW_AEC = f"""
+VIEW_PERFORMANCE_RETORNO_AEC = f"""
 SELECT
     data,
     chave_externa,
@@ -31,7 +31,7 @@ and nome_nivel_hierarquia = '1'
 and segmento not ilike %s
 """
 
-VIEW_AEC_REPORTS = f"""
+VIEW_PERFORMANCE_REPORTS_AEC = f"""
 SELECT
     data,
     chave_externa,
@@ -64,7 +64,7 @@ and nome_nivel_hierarquia = '1'
 and segmento not ilike %s
 """
 
-VIEW_SANTANDER = f"""
+TABELA_PERFORMANCE_RETORNO_SANTANDER = f"""
 SELECT
     data,
     chave_externa::int,
@@ -97,29 +97,10 @@ and nome_nivel_hierarquia = 'OPERACIONAL'
 and segmento ilike %s
 """
 
-TABELA_AEC = f"""
+TABELA_PERFORMANCE_RETORNO_AEC = f"""
 SELECT
     data,
     CAST(chave_externa AS int) AS chave_externa,
-    CAST(
-        CASE
-            WHEN nome_nivel_hierarquia = 'operacional' THEN 1
-            WHEN nome_nivel_hierarquia = 'supervisor' THEN 2
-            WHEN nome_nivel_hierarquia = 'coordenador' THEN 3
-            WHEN nome_nivel_hierarquia = 'gerente' THEN 4
-            WHEN nome_nivel_hierarquia = 'gerente jr' THEN 5
-            WHEN nome_nivel_hierarquia = 'gerente pl' THEN 6
-            WHEN nome_nivel_hierarquia = 'gerente sr' THEN 7
-            WHEN nome_nivel_hierarquia = 'superintendente' THEN 8
-            WHEN nome_nivel_hierarquia = 'diretor de atendimento' THEN 9
-            WHEN nome_nivel_hierarquia = 'diretor' THEN 10
-            WHEN nome_nivel_hierarquia = 'presidente' THEN 11
-            WHEN nome_nivel_hierarquia = 'conselheiro' THEN 12
-            WHEN nome_nivel_hierarquia = 'superintendente' THEN 13
-            WHEN nome_nivel_hierarquia = 'sem informação' THEN 0
-            ELSE 50
-        END AS int
-    ) AS nome_nivel_hierarquia,
     CASE
         WHEN trim(chave_externa_supervisor) ~ '^[0-9]+$'
             THEN trim(chave_externa_supervisor)::int
@@ -208,6 +189,105 @@ FROM public.performance
 WHERE data=%s
     and id_indicador <> 86
     and segmento not ilike %s
+"""
+
+VIEW_NOTIFICACAO_RETORNO_AEC = """
+select data,          
+      case when length(COALESCE(chave_externa::varchar, '0')) > 6 then 0 else COALESCE(chave_externa, 0) end chave_externa,          
+      COALESCE(nome_nivel_hierarquia, 0) nome_nivel_hierarquia,        
+      data_criacao,          
+      data_expiracao,          
+      COALESCE(chave_externa_remetente, 0) chave_externa_remetente,        
+      0 as nome_nivel_hierarquia_remetente,          
+      id_notificacao,          
+      id_classificacao,          
+      case          
+       when alcance_notificacao = 'Enviar para todos' then 1          
+       when alcance_notificacao = 'Para grupos específicos' then 2          
+       when alcance_notificacao = 'Para usuários selecionados' then 3          
+       else 0          
+      end alcance_notificacao,          
+      lida,          
+      favorita ,          
+      deletada ,          
+      segmento
+FROM public.notificacao_view
+where data = %s
+and segmento not ilike %s
+"""
+
+TABELA_NOTIFICACAO_RETORNO_SANTANDER = """
+SELECT
+    data,
+    CASE
+	    WHEN LENGTH(TRIM(chave_externa)) > 6 THEN 0
+	    WHEN TRIM(chave_externa) ~ '^[0-9]+$'
+	        THEN TRIM(chave_externa)::int
+	    ELSE 0
+	END AS chave_externa,
+    CAST(
+        CASE
+            WHEN nome_nivel_hierarquia = 'operacional' THEN 1
+            WHEN nome_nivel_hierarquia = 'supervisor' THEN 2
+            WHEN nome_nivel_hierarquia = 'coordenador' THEN 3
+            WHEN nome_nivel_hierarquia = 'gerente' THEN 4
+            WHEN nome_nivel_hierarquia = 'gerente jr' THEN 5
+            WHEN nome_nivel_hierarquia = 'gerente pl' THEN 6
+            WHEN nome_nivel_hierarquia = 'gerente sr' THEN 7
+            WHEN nome_nivel_hierarquia = 'gerente_execuitvo' THEN 8
+            WHEN nome_nivel_hierarquia = 'diretor de atendimento' THEN 9
+            WHEN nome_nivel_hierarquia = 'diretor' THEN 10
+            WHEN nome_nivel_hierarquia = 'presidente' THEN 11
+            WHEN nome_nivel_hierarquia = 'conselheiro' THEN 12
+            WHEN nome_nivel_hierarquia = 'sem informação' THEN 0
+            ELSE 50
+        END AS int
+    ) AS nome_nivel_hierarquia,
+    data_criacao,
+    data_expiracao,
+    CAST(
+        CASE
+            WHEN LENGTH(chave_externa_remetente) > 6 THEN 0
+            WHEN TRIM(chave_externa_remetente) ~ '^[0-9]+$'
+                THEN chave_externa_remetente::int
+            ELSE 0
+        END AS int
+    ) AS chave_externa_remetente,
+    CAST(
+        CASE
+            WHEN nome_nivel_hierarquia_remetente = 'operacional' THEN 1
+            WHEN nome_nivel_hierarquia_remetente = 'supervisor' THEN 2
+            WHEN nome_nivel_hierarquia_remetente = 'coordenador' THEN 3
+            WHEN nome_nivel_hierarquia_remetente = 'gerente' THEN 4
+            WHEN nome_nivel_hierarquia_remetente = 'gerente jr' THEN 5
+            WHEN nome_nivel_hierarquia_remetente = 'gerente pl' THEN 6
+            WHEN nome_nivel_hierarquia_remetente = 'gerente sr' THEN 7
+            WHEN nome_nivel_hierarquia_remetente = 'gerente_executivo' THEN 8
+            WHEN nome_nivel_hierarquia_remetente = 'diretor de atendimento' THEN 9
+            WHEN nome_nivel_hierarquia_remetente = 'diretor' THEN 10
+            WHEN nome_nivel_hierarquia_remetente = 'presidente' THEN 11
+            WHEN nome_nivel_hierarquia_remetente = 'conselheiro' THEN 12
+            WHEN nome_nivel_hierarquia_remetente = 'sem informação' THEN 0
+            ELSE 50
+        END AS int
+    ) AS nome_nivel_hierarquia_remetente,
+    id_notificacao,
+    id_classificacao,
+    CAST(
+        CASE
+            WHEN alcance_notificacao = 'Enviar para todos' THEN 1
+            WHEN alcance_notificacao = 'Para grupos específicos' THEN 2
+            WHEN alcance_notificacao = 'Para usuários selecionados' THEN 3
+            ELSE 0
+        END AS int
+    ) AS alcance_notificacao,
+    CAST(lida AS int) AS lida,
+    CAST(favorita AS int) AS favorita,
+    CAST(deletada AS int) AS deletada,
+    segmento
+FROM public.notificacao
+where data = %s
+and segmento ilike %s
 """
 
 def get_query_pg(query, indicators):
