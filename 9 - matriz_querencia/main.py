@@ -2,7 +2,7 @@ import pyodbc
 from datetime import datetime
 from telegram_config import notify_telegram
 
-CONNECTION_STRING = "Driver={SQL Server};Server=primno4;Database=Robbyson;Trusted_Connection=yes;"
+CONNECTION_STRING = "Driver={ODBC Driver 18 for SQL Server};Server=primno4;Database=Robbyson;Trusted_Connection=yes;TrustServerCertificate=yes;"
 hoje = datetime.now()
 dia = datetime.now().day
 
@@ -41,7 +41,7 @@ if object_id('tempdb..#hmn') is not null drop table #hmn;
         end as gerente,
         gerente_executivo,
         row_number() over (partition by atributo order by gerente) as rn -- row number para pegar apenas o primeiro gerente alfabeticamente para os atributos que contém mais de um
-    from rlt.hmn (nolock)
+    from robbyson.rlt.hmn (nolock)
     where --data = dateadd(d, 1, eomonth(getdate(), @indice)) -- modificado em 04/02/2026 para a data d-1 em vez da data do mes em questão para evitar problemas com atributos que não aparecem na pagina apoio
     data = convert(date, getdate()-1)
     and situacaohominum in ('ativo', 'treinamento')
@@ -64,7 +64,7 @@ where rn = 1
     select distinct 
         matricula,
         atributo
-    from rlt.hmn (nolock) 
+    from robbyson.rlt.hmn (nolock) 
     where data = convert(date, getdate()-1)
         and situacaohominum in ('ativo')
         and tipohierarquia = 'operação'
@@ -78,7 +78,7 @@ where rn = 1
 , atributos_dados_disp as (
     select distinct
         atributo
-    from ext.indicadoresgeral (nolock) ind
+    from robbyson.ext.indicadoresgeral (nolock) ind
     inner join atributos_validos av
         on av.matricula = ind.matricula
     where idindicador = 901
@@ -96,14 +96,14 @@ where rn = 1
         on ad.atributo = h.atributo
     where not exists (
         select distinct data_inicio
-        from rby.meta (nolock) m
+        from robbyson.rby.meta (nolock) m
         where m.atributo = ad.atributo
             and m.data_inicio >= dateadd(day, 1, eomonth(getdate(), {meta_data_inicio_maior}))
             and m.data_inicio <  dateadd(day, 1, eomonth(getdate(), {meta_data_inicio_menor}))
     )
     and not exists (
         select 1
-        from dbo.sistema_matriz (nolock) sm
+        from robbysonmatriz.dbo.sistema_matriz (nolock) sm
         where sm.atributo = ad.atributo
         and sm.periodo = dateadd(day,1,eomonth(getdate(),{sm_periodo}))
     )
@@ -112,14 +112,14 @@ where rn = 1
 , indicadores_padrao as (
     select *
     from (values
-        ('901 - % DISPONIBILIDADE','94',30,'PERCENTUAL'),
+        ('901 - % DISPONIBILIDADE','94',35,'PERCENTUAL'),
         ('15 - TEMPO LOGADO','00:00:00',0,'HORA'),
         ('25 - NR17','00:00:00',0,'HORA'),
         ('6 - % ABSENTEÍSMO','5',0,'PERCENTUAL')
     ) v(id_nome_indicador, meta, moedas, tipo_indicador)
 )
 
-insert into robbyson.dbo.sistema_matriz
+insert into robbysonmatriz.dbo.sistema_matriz
 select
     upper(a.atributo) as atributo,
     i.id_nome_indicador,
@@ -162,7 +162,8 @@ select
     0 as matriz_coletada,
     '' as justificativa_meta,
     '' as observacao_operacao,
-    LTRIM(RTRIM(LEFT(i.id_nome_indicador, CHARINDEX('-', i.id_nome_indicador) - 1))) as id_indicador
+    LTRIM(RTRIM(LEFT(i.id_nome_indicador, CHARINDEX('-', i.id_nome_indicador) - 1))) as id_indicador,
+    0 as moedas_apoio
 from atributos_sem_dados a
 cross join indicadores_padrao i
 
@@ -185,7 +186,7 @@ if object_id('tempdb..#hmn') is not null drop table #hmn;
         end as gerente,
         gerente_executivo,
         row_number() over (partition by atributo order by gerente) as rn -- row number para pegar apenas o primeiro gerente alfabeticamente para os atributos que contém mais de um
-    from rlt.hmn (nolock)
+    from robbyson.rlt.hmn (nolock)
     where --data = dateadd(d, 1, eomonth(getdate(), @indice)) -- modificado em 04/02/2026 para a data d-1 em vez da data do mes em questão para evitar problemas com atributos que não aparecem na pagina apoio
     data = convert(date, getdate()-1)
     and situacaohominum in ('ativo', 'treinamento')
@@ -207,7 +208,7 @@ where rn = 1
     select distinct 
         matricula,
         atributo
-    from rlt.hmn (nolock) 
+    from robbyson.rlt.hmn (nolock) 
     where data = convert(date, getdate()-1)
         and situacaohominum in ('ativo')
         and tipohierarquia = 'operação'
@@ -221,7 +222,7 @@ where rn = 1
 , atributos_dados_disp as (
     select distinct
         atributo
-    from ext.indicadoresgeral (nolock) ind
+    from robbyson.ext.indicadoresgeral (nolock) ind
     inner join atributos_validos av
         on av.matricula = ind.matricula
     where idindicador = 901
@@ -239,14 +240,14 @@ where rn = 1
         on ad.atributo = h.atributo
     where not exists (
         select distinct data_inicio
-        from rby.meta (nolock) m
+        from robbyson.rby.meta (nolock) m
         where m.atributo = ad.atributo
             and m.data_inicio >= dateadd(day, 1, eomonth(getdate(), {meta_data_inicio_maior}))
             and m.data_inicio <  dateadd(day, 1, eomonth(getdate(), {meta_data_inicio_menor}))
     )
     and not exists (
         select 1
-        from dbo.sistema_matriz (nolock) sm
+        from robbysonmatriz.dbo.sistema_matriz (nolock) sm
         where sm.atributo = ad.atributo
         and sm.periodo = dateadd(day,1,eomonth(getdate(),{sm_periodo}))
     )
@@ -255,15 +256,20 @@ where rn = 1
 select distinct atributo from atributos_sem_dados
 """
 
+query_insert = f"""
+insert into robbysonmatriz.dbo.publico_piloto_sistema_matriz (atributo, gerente, gerentepleno, gerentesenior, data_atualizacao) values (?, ?, ?, ?, getdate())
+"""
+
 def exec_query(conn):
     try:
         results = None
         cur = conn.cursor()
         cur.execute(query_read)
         results = [row[0] for row in cur.fetchall()]
-        cur.execute(query_write) 
+        if results:
+            cur.executemany(query_insert, [(row, '', '', '') for row in results])
+            cur.execute(query_write)
         conn.commit()
-        cur.close()
         return results
     except Exception as e:
         conn.rollback()
@@ -276,7 +282,7 @@ def exec_query(conn):
 
 if __name__ == "__main__":
     try:
-        mes = "seguinte" if dia > 15 else "anterior"
+        mes = "seguinte" if dia > 15 else "atual"
         conn = pyodbc.connect(CONNECTION_STRING)
         attributes = exec_query(conn)
         if not attributes:
