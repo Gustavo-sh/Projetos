@@ -3,8 +3,11 @@ from datetime import timedelta
 from decimal import Decimal
 import time
 from utils import write_log
-from sqlserver import CURSOR_SQL, insert_many, commit, rollback, delete_day_indicators_performance
-from querys_pg import VIEW_AEC, TABELA_AEC, VIEW_SANTANDER, get_query_pg
+from sqlserver import CURSOR_SQL, insert_many, commit, rollback, delete_day_indicators_performance, delete_day_indicators_notificacao
+from querys_pg import (
+    VIEW_PERFORMANCE_RETORNO_AEC, TABELA_PERFORMANCE_RETORNO_AEC, TABELA_PERFORMANCE_RETORNO_SANTANDER, get_query_pg,
+    VIEW_NOTIFICACAO_RETORNO_AEC, TABELA_NOTIFICACAO_RETORNO_SANTANDER
+)
 from postgre import create_connection
 from dotenv import load_dotenv
 import os
@@ -91,9 +94,9 @@ def sync_specific_day_performance(dia, cursor_pg, indicators_pg, indicators_sql,
 
     try:
         if environ == "AEC":
-            query = get_query_pg(VIEW_AEC, indicators_pg)
+            query = get_query_pg(TABELA_PERFORMANCE_RETORNO_AEC, indicators_pg)
         elif environ == "SANTANDER":
-            query = get_query_pg(VIEW_SANTANDER, indicators_pg)
+            query = get_query_pg(TABELA_PERFORMANCE_RETORNO_SANTANDER, indicators_pg)
         else:
             raise ValueError(f"Ambiente inválido: {environ}")
 
@@ -213,5 +216,163 @@ def sync_specific_day_performance(dia, cursor_pg, indicators_pg, indicators_sql,
 
         rollback()
         write_log(f"Rollback sql realizado com sucesso - {environ}...")
+
+        raise
+
+
+
+
+def run_specific_range_notificacao(range_start, range_end, host, port, database, username, password, environ):
+    try:
+        CONN_PG = create_connection(host, port, database, username, password)
+        CURSOR_PG = CONN_PG.cursor()
+    except Exception as e:
+        write_log(f"NOTIF - Erro ao criar conexão postgre: {str(e)} - {environ}...")
+        return
+
+    for offset in range(range_start, 0, -1):
+        dia = None
+        try:
+
+            dia = date.today() - timedelta(days=offset)
+
+            if offset == range_end-1:
+                break
+
+            write_log(f"NOTIF - Offset: {offset} - {environ}...")
+            
+            inicio = time.time()
+            sync_specific_day_notificacao(dia, CURSOR_PG, environ)
+            fim = time.time()
+
+            write_log(f"NOTIF - {int(fim - inicio)} segundos para processar o dia {dia} - {environ}...")
+        except Exception as e:
+            write_log(f"NOTIF - Erro ({e}) ao processar o dia {dia} - {environ}...")
+            CURSOR_SQL.execute("""
+            UPDATE dbo.LogReplicacaoRby
+            SET DataFim = GETDATE(),
+                Erro = ?
+            WHERE Data = ?
+            AND Objeto = 'rby.notificacao_compacta_python'
+            AND Ambiente = ?
+            and DataInicio = (SELECT max(DataInicio) from LogReplicacaoRby where Data = ? AND Objeto = 'rby.notificacao_compacta_python' AND Ambiente = ?)
+            """, (str(e), dia, environ, dia, environ))
+            continue
+
+    try:
+        CURSOR_PG.close()
+        CONN_PG.close()
+        write_log(f"NOTIF - Conexão com postgre finalizada com sucesso - {environ}...")
+    except:
+        pass
+
+def sync_specific_day_notificacao(dia, cursor_pg, environ):
+
+    CURSOR_SQL.execute(f"""INSERT INTO dbo.LogReplicacaoRby (Data, Objeto, DataInicio, DataFim, Linhas, Erro, Ambiente) VALUES (?, 'rby.performance', GETDATE(), NULL, NULL, NULL, ?);""", (dia, environ))
+
+    write_log(f"NOTIF - Processando o dia {dia} - {environ}...")
+    
+    try:
+        if environ == "AEC":
+            query = get_query_pg(VIEW_NOTIFICACAO_RETORNO_AEC, None)
+        elif environ == "SANTANDER":
+            query = get_query_pg(TABELA_NOTIFICACAO_RETORNO_SANTANDER, None)
+        else:
+            raise ValueError(f"Ambiente inválido: {environ}")
+
+        cursor_pg.execute(
+            query,
+            (dia, "premium - %santander%")
+        )
+
+        delete_day_indicators_notificacao(dia, environ)
+
+        INSERT_SQL = """
+            INSERT INTO rby.notificacao_compacta_python (
+            data,
+            chave_externa,
+            nome_nivel_hierarquia,
+            data_criacao,
+            data_expiracao,
+            chave_externa_remetente,
+            nome_nivel_hierarquia_remetente,
+            id_notificacao,
+            id_classificacao,
+            alcance_notificacao,
+            lida,
+            favorita,
+            deletada,
+            segmento
+        )
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """
+
+        lines = 0
+
+        while True:
+
+            rows = cursor_pg.fetchmany(int(os.getenv("FETCH_SIZE")))
+
+            if not rows:
+                break
+
+            rows = normalize(rows)
+
+            insert_many(INSERT_SQL, rows)
+
+            lines += len(rows)
+
+            if lines % 100000 == 0:
+                write_log(f"NOTIF - Total de {lines} linhas recebidas do postgre até agora - {environ}...")
+
+        write_log(f"NOTIF - {lines} linhas inseridas para o dia {dia} - {environ}...")
+
+        if environ == "SANTANDER":
+            segmento_filter = "segmento LIKE 'premium - %santander%'"
+        elif environ == "AEC":
+            segmento_filter = "segmento NOT LIKE 'premium - %santander%'"
+        else:
+            raise ValueError(f"Ambiente inválido: {environ}")
+
+
+        params = (dia,)
+        sql_valid = f"""
+                    SELECT COUNT(*)
+                    FROM rby.notificacao_compacta_python
+                    WHERE data = ?
+                    AND {segmento_filter}
+                    """
+
+        CURSOR_SQL.execute(
+            sql_valid,
+            params
+        )
+
+        count_rows = CURSOR_SQL.fetchone()[0]
+
+        if count_rows != lines:
+
+            raise Exception(
+                f"Quantidade de linhas inseridas ({lines}) "
+                f"diferente da quantidade de linhas na tabela "
+                f"({count_rows})"
+            )
+
+        CURSOR_SQL.execute("""
+        UPDATE dbo.LogReplicacaoRby
+        SET DataFim = GETDATE(),
+        Linhas = ?
+        WHERE Data = ?
+        AND Objeto = 'rby.notificacao_compacta_python'
+        AND Ambiente = ?
+        and DataInicio = (SELECT max(DataInicio) from LogReplicacaoRby where Data = ? AND Objeto = 'rby.notificacao_compacta_python' AND Ambiente = ?)
+        """, (lines, dia, environ, dia, environ))
+                
+        commit()
+
+    except:
+
+        rollback()
+        write_log(f"NOTIF - Rollback sql realizado com sucesso - {environ}...")
 
         raise

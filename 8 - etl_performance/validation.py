@@ -105,9 +105,9 @@ def validation_santander():
         CURSOR_PG.close()
         CONN_PG.close()
 
-def main():
+def exec_validation():
     try:
-        CURSOR_SQL.execute("""insert into dbo.Historicos_Procedures values('Validation_Performance_Python', GETDATE(), null, 'Validation Performance', 'D75')""")
+        CURSOR_SQL.execute("""insert into dbo.Historicos_Procedures values('Validation_Performance_Python', GETDATE(), null, 'Validation Performance', 'D60')""")
         CURSOR_SQL.execute("truncate table rby.performance_validation")
         commit()
         try:
@@ -126,4 +126,4 @@ def main():
         CONN_SQL.close()
 
 if __name__ == "__main__":
-    main()
+    exec_validation()

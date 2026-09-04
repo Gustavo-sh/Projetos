@@ -261,6 +261,8 @@ def import_api(username, password):
                 dados = {}
             TOKEN = dados.get("sessionKey", "")
 
+        print(username)
+
         if not TOKEN:
             TOKEN = get_session_key(username, password)
 

@@ -58,6 +58,42 @@ def delete_day_indicators_performance(dia, environ, indicators):
     write_log(f"Dia {dia} deletado ({lines} linhas) para {environ} (ids {indicators})...")
 
 
+def delete_day_indicators_notificacao(dia, environ):
+
+    str_like = ""
+    if environ == "AEC":
+        str_like = "segmento not like 'premium - %santander%'"
+    elif environ == "SANTANDER":
+        str_like = "segmento like 'premium - %santander%'"
+
+    sql = f"""
+        DELETE TOP (10000)
+        FROM rby.notificacao_compacta_python      
+        WHERE data = ?
+        and {str_like}
+        """
+    
+    write_log(f"NOTIF - Deletando {dia} para {environ}...")
+
+    lines = 0
+
+    params = (dia,)
+
+    while True:
+
+        CURSOR_SQL.execute(sql,
+            params
+        )
+
+        rowcount = CURSOR_SQL.rowcount
+        lines += rowcount
+
+        if rowcount == 0:
+            break
+
+    write_log(f"NOTIF - Dia {dia} deletado ({lines} linhas) para {environ}...")
+
+
 def insert_many(sql, rows, many=True):
 
     if not many:
