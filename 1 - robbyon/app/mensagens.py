@@ -21,21 +21,21 @@ def to_float_percent(valor):
     
 def normalize_values(db):
     if db["formato"] == "admin_generic_hour":
-        db["resultado_m0"] = str(timedelta(seconds=round(db["resultado_m0"])))
-        db["resultado_m1"] = str(timedelta(seconds=round(db["resultado_m1"])))
+        db["resultado_m0"] = str(timedelta(seconds=round(db["resultado_m0"]))) if db["resultado_m0"] != "Sem dados" else db["resultado_m0"]
+        db["resultado_m1"] = str(timedelta(seconds=round(db["resultado_m1"]))) if db["resultado_m1"] != "Sem dados" else db["resultado_m1"]
         db["meta_m0"] = str(timedelta(seconds=round(db["meta_m0"])))
     elif db["formato"] == "admin_generic_percentage":
-        db["resultado_m0"] = round(to_float_percent(db['resultado_m0'])*100, 2)
-        db["resultado_m1"] = round(to_float_percent(db['resultado_m1'])*100, 2)
-        db["meta_m0"] = round(to_float_percent(db["meta_m0"])*100, 2)
+        db["resultado_m0"] = round(to_float_percent(db['resultado_m0'])*100, 2) if db["resultado_m0"] != "Sem dados" else db["resultado_m0"]
+        db["resultado_m1"] = round(to_float_percent(db['resultado_m1'])*100, 2) if db["resultado_m1"] != "Sem dados" else db["resultado_m1"]
+        db["meta_m0"] = round(to_float_percent(db["meta_m0"])*100, 2) if db["meta_m0"] != "Sem dados" else db["meta_m0"]
     elif db["formato"] == "admin_generic_float":
-        db["resultado_m0"] = to_float_percent(db['resultado_m0'])
-        db["resultado_m1"] = to_float_percent(db['resultado_m1'])
-        db["meta_m0"] = to_float_percent(db["meta_m0"])
+        db["resultado_m0"] = to_float_percent(db['resultado_m0']) if db["resultado_m0"] != "Sem dados" else db["resultado_m0"]
+        db["resultado_m1"] = to_float_percent(db['resultado_m1']) if db["resultado_m1"] != "Sem dados" else db["resultado_m1"]
+        db["meta_m0"] = to_float_percent(db["meta_m0"]) if db["meta_m0"] != "Sem dados" else db["meta_m0"]
     else:
-        db["resultado_m0"] = round(db["resultado_m0"])
-        db["resultado_m1"] = round(db["resultado_m1"])
-        db["meta_m0"] = round(db["meta_m0"])
+        db["resultado_m0"] = round(db["resultado_m0"]) if db["resultado_m0"] != "Sem dados" else db["resultado_m0"]
+        db["resultado_m1"] = round(db["resultado_m1"]) if db["resultado_m1"] != "Sem dados" else db["resultado_m1"]
+        db["meta_m0"] = round(db["meta_m0"]) if db["meta_m0"] != "Sem dados" else db["meta_m0"]
 
 
 def mensagem_semana_1_ho(db):
