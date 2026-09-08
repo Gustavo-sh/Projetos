@@ -348,6 +348,33 @@ CTE_Fixos_Especiais AS (
     WHERE b.tipo_matriz = 'OPERACIONAL'
     and atributo like '%SANTANDER%'
     and ativo in (0,1,3)
+
+    union all
+
+    -- ==================== ERROS OP QUINTO ANDAR ====================
+    SELECT m.tipo_matriz, m.atributo, 982, 2000, 0, -40, -60, -80
+    FROM base m
+    WHERE m.tipo_matriz = 'OPERACIONAL'
+      AND m.atributo IN (
+            'PREMIUM - QUINTO ANDAR FRONT - QA_BACKOFF - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QA_BACKPARTNESS - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QA_CX_COMPRAEVENDA - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QA_MIDIAS - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QA_MOVINGFRONT_CHAT - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QA_MOVINGFRONT_VOZ - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QA_ONGOING_CHAT - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QA_ONGOING_VOZ - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QA_VISITAS_PROPOSTAS_VOZ - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QUINTO_ANDAR_CIQ_PARTNES - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QUINTO_ANDAR_CXBACKFORSALES - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QUINTO_ANDAR_FRONT - JN',
+            'PREMIUM - QUINTO ANDAR FRONT - QUINTO_ANDAR_OFFBOARDING - JN',
+            'PREMIUM - QUINTO ANDAR FRONT - QUINTO_ANDAR_OFFBOARDING - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QUINTO_ANDAR_OFFBOARDING_VOZ - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QUINTO_ANDAR_PAYMENTS - JN2',
+            'PREMIUM - QUINTO ANDAR FRONT - QUINTO_ANDAR_VISITAS_PROPOSTAS - JN2'
+      )
+      and ativo in (0,1,3)
 ),
 
 base_fixos AS (
@@ -834,6 +861,13 @@ CTE_Fixos_Especiais_Aplicados AS (
     FROM CTE_AtributoPeriodo ap
     JOIN CTE_Fixos_Especiais f
       ON f.atributo = ap.atributo
+    where not exists (
+        select 1 from base b
+        where b.id_indicador = f.indicador
+          and b.atributo = ap.atributo
+          and b.data_inicio = ap.attr_start
+          and b.data_fim = ap.attr_end
+    )
 ), 
 
 -- CTE QUE PERMITE O AJUSTE DE COMPORTAMENTO DA DEFLAÇÃO PARA QUEM FICA G4 EM QUALQUER INDICADOR/ATRIBUTO

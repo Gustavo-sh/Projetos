@@ -31,8 +31,8 @@ ETLS = {
     },
 
     "PD45": {
-        "range_start": 46,
-        "procedures": [
+        "range_start": 47
+        ,"procedures": [
             "dbo.sp_Ins_matriz",
             "dbo.SPR_Voucher_Quantidade",
             "dbo.sp_ins_bussola_d45",
@@ -53,25 +53,25 @@ ETLS = {
     },
 
     "PDVAR": {
-        "range_start": 1,
-        "procedures": [
-            "dbo.sp_Ins_matriz",
-            "dbo.SPR_Voucher_Quantidade",
-            "dbo.sp_ins_bussola_d45",
-            "dbo.sp_Ins_bussola_semanal_D45",
-            "dbo.SP_Ins_Resultado_Consolidado_D45",
-            "dbo.sp_ins_rel11",
-            "dbo.sp_ins_rel2",
-            "dbo.sp_ins_rel31",
-            "dbo.Sp_Ins_ReincidenciaDeGrupos",
-            "dbo.sp_ins_indice_evolucao",
-            "rlt.Sp_Ins_CheckPoint_D45",
-            "dbo.SP_Ins_Gamification_D45",
-            "dbo.sp_ins_gamificationperformance_D45",
-            "dbo.sp_ins_grupos_rh_processo",
-            "dbo.sp_Ins_RV",
-            "rby.sp_Ins_PerformanceFoto"
-        ]
+        "range_start": 98
+        # ,"procedures": [
+        #     "dbo.sp_Ins_matriz",
+        #     "dbo.SPR_Voucher_Quantidade",
+        #     "dbo.sp_ins_bussola_d45",
+        #     "dbo.sp_Ins_bussola_semanal_D45",
+        #     "dbo.SP_Ins_Resultado_Consolidado_D45",
+        #     "dbo.sp_ins_rel11",
+        #     "dbo.sp_ins_rel2",
+        #     "dbo.sp_ins_rel31",
+        #     "dbo.Sp_Ins_ReincidenciaDeGrupos",
+        #     "dbo.sp_ins_indice_evolucao",
+        #     "rlt.Sp_Ins_CheckPoint_D45",
+        #     "dbo.SP_Ins_Gamification_D45",
+        #     "dbo.sp_ins_gamificationperformance_D45",
+        #     "dbo.sp_ins_grupos_rh_processo",
+        #     "dbo.sp_Ins_RV",
+        #     "rby.sp_Ins_PerformanceFoto"
+        # ]
     },
 
     "ND15": {
@@ -111,6 +111,8 @@ def executar_procedures(procedures):
 
 
 def executar_etl(tipo_etl):
+
+    start_tunnel()
 
     nomes = {"PD15": "Performance", "PD45": "Performance", "PDVAR": "Performance", "ND15": "Notificação", "ND45": "Notificação"}
     nome = nomes.get(tipo_etl)
@@ -157,19 +159,33 @@ def executar_etl(tipo_etl):
 
         elif tipo_etl in ("PD15", "PD45"):
 
-            # AEC
+            # AEC REPORTS
             run_specific_range_performance(
                 config["range_start"],
                 0,
                 None,
                 None,
-                os.getenv("HOST_RETORNO"),
-                os.getenv("PORTA_RETORNO"),
+                os.getenv("LOCAL_HOST"),
+                os.getenv("LOCAL_PORT"),
                 os.getenv("POSTGRES_DATABASE"),
-                os.getenv("USER_RETORNO"),
-                os.getenv("PASSWORD_RETORNO"),
+                os.getenv("POSTGRES_USER"),
+                os.getenv("POSTGRES_PASSWORD"),
                 "AEC"
             )
+
+            # AEC RETORNO
+            # run_specific_range_performance(
+            #     config["range_start"],
+            #     0,
+            #     None,
+            #     None,
+            #     os.getenv("HOST_RETORNO"),
+            #     os.getenv("PORTA_RETORNO"),
+            #     os.getenv("POSTGRES_DATABASE"),
+            #     os.getenv("USER_RETORNO"),
+            #     os.getenv("PASSWORD_RETORNO"),
+            #     "AEC"
+            # )
 
             # SANTANDER
             run_specific_range_performance(
@@ -186,27 +202,41 @@ def executar_etl(tipo_etl):
             )
 
         elif tipo_etl in ("PDVAR"):
-                        
-            # AEC
+
+            # AEC REPORTS
             run_specific_range_performance(
                 config["range_start"],
                 0,
-                [10, 34, 217], # indicadores para consultar no postgre
-                [10, 34, 217], # indicadores para consultar e deletar no sql
-                os.getenv("HOST_RETORNO"),
-                os.getenv("PORTA_RETORNO"),
+                [901, 34], # indicadores para consultar no postgre
+                [901, 34], # indicadores para consultar e deletar no sql
+                os.getenv("LOCAL_HOST"),
+                os.getenv("LOCAL_PORT"),
                 os.getenv("POSTGRES_DATABASE"),
-                os.getenv("USER_RETORNO"),
-                os.getenv("PASSWORD_RETORNO"),
+                os.getenv("POSTGRES_USER"),
+                os.getenv("POSTGRES_PASSWORD"),
                 "AEC"
             )
+                        
+            # AEC RETORNO
+            # run_specific_range_performance(
+            #     config["range_start"],
+            #     0,
+            #     [901, 34], # indicadores para consultar no postgre
+            #     [901, 34], # indicadores para consultar e deletar no sql
+            #     os.getenv("HOST_RETORNO"),
+            #     os.getenv("PORTA_RETORNO"),
+            #     os.getenv("POSTGRES_DATABASE"),
+            #     os.getenv("USER_RETORNO"),
+            #     os.getenv("PASSWORD_RETORNO"),
+            #     "AEC"
+            # )
 
             # SANTANDER
             run_specific_range_performance(
                 config["range_start"],
                 0,
-                [10, -5, 217], # indicadores para consultar no postgre
-                [10, 34, 217], # indicadores para consultar e deletar no sql
+                [901, -5], # indicadores para consultar no postgre
+                [901, 34], # indicadores para consultar e deletar no sql
                 os.getenv("HOST_RETORNO_SANTANDER"),
                 os.getenv("PORTA_RETORNO_SANTANDER"),
                 os.getenv("POSTGRES_DATABASE"),
@@ -246,6 +276,8 @@ def executar_etl(tipo_etl):
         except:
             pass
 
+        kill_existing_tunnel()
+        write_log("Tunnel finalizado com sucesso...")
         write_log(f"ETL {tipo_etl} finalizada com sucesso.")
 
 

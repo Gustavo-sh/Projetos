@@ -6,7 +6,7 @@ from utils import write_log
 from sqlserver import CURSOR_SQL, insert_many, commit, rollback, delete_day_indicators_performance, delete_day_indicators_notificacao
 from querys_pg import (
     VIEW_PERFORMANCE_RETORNO_AEC, TABELA_PERFORMANCE_RETORNO_AEC, TABELA_PERFORMANCE_RETORNO_SANTANDER, get_query_pg,
-    VIEW_NOTIFICACAO_RETORNO_AEC, TABELA_NOTIFICACAO_RETORNO_SANTANDER
+    VIEW_NOTIFICACAO_RETORNO_AEC, TABELA_NOTIFICACAO_RETORNO_SANTANDER, VIEW_PERFORMANCE_REPORTS_AEC
 )
 from postgre import create_connection
 from dotenv import load_dotenv
@@ -92,9 +92,12 @@ def sync_specific_day_performance(dia, cursor_pg, indicators_pg, indicators_sql,
     
     placeholders_sql = ", ".join("?" for _ in indicators_sql) if indicators_sql else ""
 
+    cursor_pg.execute("""SET jit = off;""")
+    cursor_pg.execute("""SET max_parallel_workers_per_gather = 6;""")
+
     try:
         if environ == "AEC":
-            query = get_query_pg(TABELA_PERFORMANCE_RETORNO_AEC, indicators_pg)
+            query = get_query_pg(VIEW_PERFORMANCE_REPORTS_AEC, indicators_pg)
         elif environ == "SANTANDER":
             query = get_query_pg(TABELA_PERFORMANCE_RETORNO_SANTANDER, indicators_pg)
         else:

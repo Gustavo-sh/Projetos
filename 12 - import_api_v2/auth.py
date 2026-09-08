@@ -57,12 +57,12 @@ def get_session_key(username, password):
 
     driver.get("https://aec.robbyson.com/administracao/#/login/")
 
-    try:
-        wait_4m.until(EC.presence_of_element_located((By.XPATH, "/html/body/nav/div/ul/li/a/div[1]"))).click()
-        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Usuario logado, gerando session key :: ")
-        return generate_session_key(driver)
-    except:
-        pass
+    # try:
+    #     wait_4m.until(EC.presence_of_element_located((By.XPATH, "/html/body/nav/div/ul/li/a/div[1]"))).click()
+    #     notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Usuario logado, gerando session key :: ")
+    #     return generate_session_key(driver)
+    # except:
+    #     pass
 
     wait_4m.until(EC.presence_of_element_located((By.XPATH, "/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div[1]/div[3]/div/div/div/div[2]/div[2]/div/input[1]"))).send_keys(username) # usuario
     notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Usuário preenchido :: ") 
