@@ -3,27 +3,6 @@ from datetime import datetime
 from telegram_config import notify_telegram
 
 CONNECTION_STRING = "Driver={ODBC Driver 18 for SQL Server};Server=primno4;Database=Robbyson;Trusted_Connection=yes;TrustServerCertificate=yes;"
-hoje = datetime.now()
-dia = datetime.now().day
-
-meta_data_inicio_maior = -1
-meta_data_inicio_menor = 0
-sm_periodo = -1
-final_data_inicio = -1
-final_data_fim = 0
-final_periodo = -1
-final_importacao_valida = 0
-
-if dia == 15:
-    exit()
-elif dia > 15:
-    meta_data_inicio_maior = 0
-    meta_data_inicio_menor = 1
-    sm_periodo = 0
-    final_data_inicio = 0
-    final_data_fim = 1
-    final_periodo = 0
-    final_importacao_valida = 1
 
 query_write = f"""
 SET NOCOUNT ON
@@ -98,14 +77,14 @@ where rn = 1
         select distinct data_inicio
         from robbyson.rby.meta (nolock) m
         where m.atributo = ad.atributo
-            and m.data_inicio >= dateadd(day, 1, eomonth(getdate(), {meta_data_inicio_maior}))
-            and m.data_inicio <  dateadd(day, 1, eomonth(getdate(), {meta_data_inicio_menor}))
+            and m.data_inicio >= dateadd(day, 1, eomonth(getdate(), -1))
+            and m.data_inicio <  dateadd(day, 1, eomonth(getdate(), 0))
     )
     and not exists (
         select 1
         from robbysonmatriz.dbo.sistema_matriz (nolock) sm
         where sm.atributo = ad.atributo
-        and sm.periodo = dateadd(day,1,eomonth(getdate(),{sm_periodo}))
+        and sm.periodo = dateadd(day,1,eomonth(getdate(),-1))
     )
 )
 
@@ -129,11 +108,11 @@ select
     'NAO' as acumulado,
     'DIARIO' as esquema_acumulado,
     'OPERACIONAL' as tipo_matriz,
-    dateadd(d, 1, eomonth(getdate(), {final_data_inicio})) as data_inicio,
-    eomonth(getdate(), {final_data_fim}) as data_fim,
-    dateadd(d, 1, eomonth(getdate(), {final_periodo})) as periodo,
+    dateadd(d, 1, eomonth(getdate(), -1)) as data_inicio,
+    eomonth(getdate(), 0) as data_fim,
+    dateadd(d, 1, eomonth(getdate(), -1)) as periodo,
     '6X1' as escala,
-    '{hoje.date()}' as descricao,
+    '{datetime.now().date()}' as descricao,
     1 as ativo,
     '' as chamado,
     upper(a.gerente) as gerente,
@@ -158,7 +137,7 @@ select
     i.meta as meta_final,
     '' as id_incluso,
     '' as id_excluso,
-    {final_importacao_valida} as importacao_valida,
+    0 as importacao_valida,
     0 as matriz_coletada,
     '' as justificativa_meta,
     '' as observacao_operacao,
@@ -242,14 +221,14 @@ where rn = 1
         select distinct data_inicio
         from robbyson.rby.meta (nolock) m
         where m.atributo = ad.atributo
-            and m.data_inicio >= dateadd(day, 1, eomonth(getdate(), {meta_data_inicio_maior}))
-            and m.data_inicio <  dateadd(day, 1, eomonth(getdate(), {meta_data_inicio_menor}))
+            and m.data_inicio >= dateadd(day, 1, eomonth(getdate(), -1))
+            and m.data_inicio <  dateadd(day, 1, eomonth(getdate(), 0))
     )
     and not exists (
         select 1
         from robbysonmatriz.dbo.sistema_matriz (nolock) sm
         where sm.atributo = ad.atributo
-        and sm.periodo = dateadd(day,1,eomonth(getdate(),{sm_periodo}))
+        and sm.periodo = dateadd(day,1,eomonth(getdate(),-1))
     )
 )
 
@@ -282,13 +261,12 @@ def exec_query(conn):
 
 if __name__ == "__main__":
     try:
-        mes = "seguinte" if dia > 15 else "atual"
         conn = pyodbc.connect(CONNECTION_STRING)
         attributes = exec_query(conn)
         if not attributes:
-            notify_telegram(f"0️⃣ Nenhum atributo sem matriz no mes {mes}, com hc ativo e com dados para disponibilidade encontrado para cadastro de matriz querencia.")
+            notify_telegram(f"0️⃣ Nenhum atributo sem matriz no mes atual, com hc ativo e com dados para disponibilidade encontrado para cadastro de matriz querencia.")
         else:
-            notify_telegram(f"✅ Atributos cadastrados com matriz querencia para o mes {mes} (importação valida = {final_importacao_valida}): \n\n" + str(attributes))
+            notify_telegram(f"✅ Atributos cadastrados com matriz querencia para o mes atual (importação valida = 0): \n\n" + str(attributes))
         conn.close()
     except Exception as e:
         notify_telegram("⚠️ Erro no cadastro automático de matriz querência: " + str(e))
