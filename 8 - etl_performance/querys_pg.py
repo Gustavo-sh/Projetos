@@ -62,6 +62,7 @@ WHERE data=%s
 and id_indicador <> 86
 and nome_nivel_hierarquia = '1'
 and segmento not ilike %s
+and meta is not null
 """
 
 TABELA_PERFORMANCE_RETORNO_SANTANDER = f"""
@@ -95,6 +96,7 @@ WHERE data=%s
 and id_indicador <> -1
 and nome_nivel_hierarquia = 'OPERACIONAL'
 and segmento ilike %s
+and meta is not null
 """
 
 TABELA_PERFORMANCE_RETORNO_AEC = f"""

@@ -7,7 +7,8 @@ from sqlserver import CONN_SQL, CURSOR_SQL, commit
 
 def validation_aec():
     try:
-        CONN_PG = create_connection(os.getenv("HOST_RETORNO"), os.getenv("PORTA_RETORNO"), os.getenv("POSTGRES_DATABASE"), os.getenv("USER_RETORNO"), os.getenv("PASSWORD_RETORNO"))
+        #CONN_PG = create_connection(os.getenv("HOST_RETORNO"), os.getenv("PORTA_RETORNO"), os.getenv("POSTGRES_DATABASE"), os.getenv("USER_RETORNO"), os.getenv("PASSWORD_RETORNO"))
+        CONN_PG = create_connection(os.getenv("LOCAL_HOST"),os.getenv("LOCAL_PORT"),os.getenv("POSTGRES_DATABASE"),os.getenv("POSTGRES_USER"),os.getenv("POSTGRES_PASSWORD"))
         CURSOR_PG = CONN_PG.cursor()
     except Exception as e:
         write_log(f"Erro ao criar conexão postgre: {str(e)} - AEC...")
@@ -17,7 +18,7 @@ def validation_aec():
     select
         data,
         count(1) as linhas
-    FROM public.performance_view
+    FROM "views".performance_view
     where data = %s
     and id_indicador = 34
     and segmento not ilike %s
