@@ -19,7 +19,7 @@ CONTROL = defaultdict(int)
 try:
     now = datetime.now()
     #retry = True
-    while now < datetime(now.year, now.month, now.day, 12, 0, 0) and retry:
+    while now < datetime(now.year, now.month, now.day, 10, 0, 0):
         #retry = False
         url = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token"
 

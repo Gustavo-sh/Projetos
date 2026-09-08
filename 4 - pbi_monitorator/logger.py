@@ -24,6 +24,7 @@ def convert_timezone(data_str):
 
 def main():
     try:
+        CONN.autocommit = True
         now = datetime.now()
         while now < datetime(now.year, now.month, now.day, 12, 0, 0):
             truncate_logger()
