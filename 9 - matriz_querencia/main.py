@@ -98,6 +98,43 @@ where rn = 1
     ) v(id_nome_indicador, meta, moedas, tipo_indicador)
 )
 
+, sinonimos as (
+    select * from (values 
+        ('oi',  'nio'),
+        ('net', 'claro'),
+        ('claro', 'net')
+    ) as t(clientesinonimo, termovalido)
+)
+
+, partes_extraidas AS (
+    SELECT 
+        atributo,
+        LTRIM(RTRIM(SUBSTRING(atributo, 1, pos1 - 1))) AS cliente,
+        LTRIM(RTRIM(SUBSTRING(atributo, pos1 + 3, pos2 - (pos1 + 3)))) AS produto
+    FROM atributos_sem_dados
+    CROSS APPLY (SELECT CHARINDEX(' - ', atributo) AS pos1) c1
+    CROSS APPLY (SELECT CHARINDEX(' - ', atributo, pos1 + 3) AS pos2) c2
+    WHERE pos1 > 0 AND pos2 > pos1
+)
+
+, atributos_aberracao as (
+    select distinct
+        p.atributo
+        --p.cliente,
+        --p.produto,
+        --'cliente diferente do produto' as motivoinvalido
+    from partes_extraidas p
+    where upper(p.cliente) <> 'premium'
+    and p.produto not like '%' + p.cliente + '%'
+    and not exists (
+        select 1 
+        from sinonimos s
+        where upper(s.clientesinonimo) = upper(p.cliente)
+            and p.produto like '%' + s.termovalido + '%'
+    )
+    and UPPER(cliente) <> 'PESSOAS'
+)
+
 insert into robbysonmatriz.dbo.sistema_matriz
 select
     upper(a.atributo) as atributo,
@@ -137,7 +174,7 @@ select
     i.meta as meta_final,
     '' as id_incluso,
     '' as id_excluso,
-    0 as importacao_valida,
+    1 as importacao_valida,
     0 as matriz_coletada,
     '' as justificativa_meta,
     '' as observacao_operacao,
@@ -145,6 +182,7 @@ select
     0 as moedas_apoio
 from atributos_sem_dados a
 cross join indicadores_padrao i
+where a.atributo not in (select atributo from atributos_aberracao)
 
 drop table #hmn
 """
@@ -232,11 +270,44 @@ where rn = 1
     )
 )
 
-select distinct atributo from atributos_sem_dados
-"""
+, sinonimos as (
+    select * from (values 
+        ('oi',  'nio'),
+        ('net', 'claro'),
+        ('claro', 'net')
+    ) as t(clientesinonimo, termovalido)
+)
 
-query_insert = f"""
-insert into robbysonmatriz.dbo.publico_piloto_sistema_matriz (atributo, gerente, gerentepleno, gerentesenior, data_atualizacao) values (?, ?, ?, ?, getdate())
+, partes_extraidas AS (
+    SELECT 
+        atributo,
+        LTRIM(RTRIM(SUBSTRING(atributo, 1, pos1 - 1))) AS cliente,
+        LTRIM(RTRIM(SUBSTRING(atributo, pos1 + 3, pos2 - (pos1 + 3)))) AS produto
+    FROM atributos_sem_dados
+    CROSS APPLY (SELECT CHARINDEX(' - ', atributo) AS pos1) c1
+    CROSS APPLY (SELECT CHARINDEX(' - ', atributo, pos1 + 3) AS pos2) c2
+    WHERE pos1 > 0 AND pos2 > pos1
+)
+
+, atributos_aberracao as (
+    select distinct
+        p.atributo
+        --p.cliente,
+        --p.produto,
+        --'cliente diferente do produto' as motivoinvalido
+    from partes_extraidas p
+    where upper(p.cliente) <> 'premium'
+    and p.produto not like '%' + p.cliente + '%'
+    and not exists (
+        select 1 
+        from sinonimos s
+        where upper(s.clientesinonimo) = upper(p.cliente)
+            and p.produto like '%' + s.termovalido + '%'
+    )
+    and UPPER(cliente) <> 'PESSOAS'
+)
+
+select distinct atributo from atributos_sem_dados where atributo not in (select atributo from atributos_aberracao)
 """
 
 def exec_query(conn):
@@ -246,7 +317,6 @@ def exec_query(conn):
         cur.execute(query_read)
         results = [row[0] for row in cur.fetchall()]
         if results:
-            cur.executemany(query_insert, [(row, '', '', '') for row in results])
             cur.execute(query_write)
         conn.commit()
         return results
