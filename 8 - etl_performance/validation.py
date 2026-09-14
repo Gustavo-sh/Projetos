@@ -4,9 +4,12 @@ from utils import write_log
 from datetime import timedelta
 from datetime import date
 from sqlserver import CONN_SQL, CURSOR_SQL, commit 
+from tunnel import start_tunnel, kill_existing_tunnel
 
 def validation_aec():
     try:
+        start_tunnel()
+
         #CONN_PG = create_connection(os.getenv("HOST_RETORNO"), os.getenv("PORTA_RETORNO"), os.getenv("POSTGRES_DATABASE"), os.getenv("USER_RETORNO"), os.getenv("PASSWORD_RETORNO"))
         CONN_PG = create_connection(os.getenv("LOCAL_HOST"),os.getenv("LOCAL_PORT"),os.getenv("POSTGRES_DATABASE"),os.getenv("POSTGRES_USER"),os.getenv("POSTGRES_PASSWORD"))
         CURSOR_PG = CONN_PG.cursor()
@@ -29,7 +32,7 @@ def validation_aec():
 
     try:
 
-        for offset in range(60, 0, -1):
+        for offset in range(97, 0, -1):
             dia = None
             try:
                 write_log(f"Offset Validation: {offset} - AEC...")
@@ -54,6 +57,8 @@ def validation_aec():
         commit()
         CURSOR_PG.close()
         CONN_PG.close()
+
+        kill_existing_tunnel()
 
         
 
@@ -80,7 +85,7 @@ def validation_santander():
 
     try: 
 
-        for offset in range(60, 0, -1):
+        for offset in range(97, 0, -1):
             dia = None
             try:
                 write_log(f"Offset Validation: {offset} - Santander...")

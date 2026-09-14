@@ -21,13 +21,15 @@ print("cursor aberto")
 
 cur.execute("""
 SELECT 
-	min(data)
+	chave_externa_diretor_atendimento
 FROM "views".performance_view
+where data between '2026-07-01' and '2026-07-31'
+and chave_externa = 6241
 """
 )
 print("query executada")
 
-print(cur.fetchone())
+print(cur.fetchall())
 
 cur.close()
 conn.close()

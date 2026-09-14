@@ -12,20 +12,20 @@ ETLS = {
         "range_start": 16,
         "procedures": [
             "dbo.sp_Ins_matriz",
-            "dbo.sp_Ins_bussola_d15",
+            "dbo.sp_Ins_bussola",
             "dbo.sp_ins_bussola_semanal",
-            "dbo.SP_Ins_Resultado_Consolidado_D15",
+            "dbo.SP_Ins_Resultado_Consolidado",
             "dbo.sp_ins_rel1",
             "dbo.sp_ins_rel2",
             "dbo.sp_ins_rel3",
             "dbo.Sp_Ins_ReincidenciaDeGrupos",
-            "dbo.sp_Ins_IGD",
+            "dbo.sp_Ins_IGD_Novo",
             "dbo.sp_ins_indice_evolucao",
-            "rlt.Sp_Ins_CheckPoint_D10",
-            "dbo.SP_Ins_Gamification_D15",
-            "dbo.sp_ins_gamificationperformance_D15",
+            "rlt.Sp_Ins_CheckPoint",
+            "dbo.SP_Ins_Gamification",
+            "dbo.sp_ins_gamificationperformance",
             "dbo.sp_ins_grupos_rh_processo",
-            "dbo.sp_Ins_RV_D15",
+            "dbo.sp_Ins_RV",
             "rby.sp_Ins_PerformanceFoto"
         ]
     },
@@ -35,17 +35,18 @@ ETLS = {
         ,"procedures": [
             "dbo.sp_Ins_matriz",
             "dbo.SPR_Voucher_Quantidade",
-            "dbo.sp_ins_bussola_d45",
-            "dbo.sp_Ins_bussola_semanal_D45",
-            "dbo.SP_Ins_Resultado_Consolidado_D45",
-            "dbo.sp_ins_rel11",
+            "dbo.sp_ins_bussola",
+            "dbo.sp_Ins_bussola_semanal",
+            "dbo.SP_Ins_Resultado_Consolidado",
+            "dbo.sp_ins_rel1",
             "dbo.sp_ins_rel2",
-            "dbo.sp_ins_rel31",
+            "dbo.sp_ins_rel3",
             "dbo.Sp_Ins_ReincidenciaDeGrupos",
+            "dbo.sp_Ins_IGD_Novo",
             "dbo.sp_ins_indice_evolucao",
-            "rlt.Sp_Ins_CheckPoint_D45",
-            "dbo.SP_Ins_Gamification_D45",
-            "dbo.sp_ins_gamificationperformance_D45",
+            "rlt.Sp_Ins_CheckPoint",
+            "dbo.SP_Ins_Gamification",
+            "dbo.sp_ins_gamificationperformance",
             "dbo.sp_ins_grupos_rh_processo",
             "dbo.sp_Ins_RV",
             "rby.sp_Ins_PerformanceFoto"
@@ -53,25 +54,7 @@ ETLS = {
     },
 
     "PDVAR": {
-        "range_start": 98
-        # ,"procedures": [
-        #     "dbo.sp_Ins_matriz",
-        #     "dbo.SPR_Voucher_Quantidade",
-        #     "dbo.sp_ins_bussola_d45",
-        #     "dbo.sp_Ins_bussola_semanal_D45",
-        #     "dbo.SP_Ins_Resultado_Consolidado_D45",
-        #     "dbo.sp_ins_rel11",
-        #     "dbo.sp_ins_rel2",
-        #     "dbo.sp_ins_rel31",
-        #     "dbo.Sp_Ins_ReincidenciaDeGrupos",
-        #     "dbo.sp_ins_indice_evolucao",
-        #     "rlt.Sp_Ins_CheckPoint_D45",
-        #     "dbo.SP_Ins_Gamification_D45",
-        #     "dbo.sp_ins_gamificationperformance_D45",
-        #     "dbo.sp_ins_grupos_rh_processo",
-        #     "dbo.sp_Ins_RV",
-        #     "rby.sp_Ins_PerformanceFoto"
-        # ]
+        "range_start": 71
     },
 
     "ND15": {
@@ -207,8 +190,8 @@ def executar_etl(tipo_etl):
             run_specific_range_performance(
                 config["range_start"],
                 0,
-                [901, 34], # indicadores para consultar no postgre
-                [901, 34], # indicadores para consultar e deletar no sql
+                None, # indicadores para consultar no postgre
+                None, # indicadores para consultar e deletar no sql
                 os.getenv("LOCAL_HOST"),
                 os.getenv("LOCAL_PORT"),
                 os.getenv("POSTGRES_DATABASE"),
@@ -220,9 +203,9 @@ def executar_etl(tipo_etl):
             # AEC RETORNO
             # run_specific_range_performance(
             #     config["range_start"],
-            #     0,
-            #     [901, 34], # indicadores para consultar no postgre
-            #     [901, 34], # indicadores para consultar e deletar no sql
+            #     97,
+            #     None, # indicadores para consultar no postgre
+            #     None, # indicadores para consultar e deletar no sql
             #     os.getenv("HOST_RETORNO"),
             #     os.getenv("PORTA_RETORNO"),
             #     os.getenv("POSTGRES_DATABASE"),
@@ -235,8 +218,8 @@ def executar_etl(tipo_etl):
             run_specific_range_performance(
                 config["range_start"],
                 0,
-                [901, -5], # indicadores para consultar no postgre
-                [901, 34], # indicadores para consultar e deletar no sql
+                None, # indicadores para consultar no postgre (-5)
+                None, # indicadores para consultar e deletar no sql (34)
                 os.getenv("HOST_RETORNO_SANTANDER"),
                 os.getenv("PORTA_RETORNO_SANTANDER"),
                 os.getenv("POSTGRES_DATABASE"),
