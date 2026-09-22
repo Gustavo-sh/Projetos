@@ -10,7 +10,7 @@ CONNECTION_STRING = (
 )
 
 try:
-    with pyodbc.connect(CONNECTION_STRING, autocommit=True) as conn:
+    with pyodbc.connect(CONNECTION_STRING, autocommit = True) as conn:
 
         cursor = conn.cursor()
 
@@ -18,17 +18,17 @@ try:
         spid = cursor.fetchone()[0]
 
         write_log(
-            f"Executando Robbyson Matriz D45 (SPID: {spid})..."
+            f"Executando sp_ins_sistema_matriz (SPID: {spid})..."
         )
 
-        cursor.execute("EXEC dbo.sp_ins_Robbyson_Matriz_D45")
+        cursor.execute("EXEC dbo.sp_ins_sistema_matriz")
 
         # Consome eventuais result sets/mensagens restantes
         while cursor.nextset():
             pass
 
         write_log(
-            f"Procedure Robbyson Matriz D45 finalizada (SPID: {spid})..."
+            f"Procedure sp_ins_sistema_matriz (SPID: {spid})..."
         )
 
 except pyodbc.Error as e:
