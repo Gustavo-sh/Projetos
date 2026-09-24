@@ -8,6 +8,7 @@ from querys_pg import (
     VIEW_PERFORMANCE_RETORNO_AEC, TABELA_PERFORMANCE_RETORNO_AEC, TABELA_PERFORMANCE_RETORNO_SANTANDER, get_query_pg,
     VIEW_NOTIFICACAO_RETORNO_AEC, TABELA_NOTIFICACAO_RETORNO_SANTANDER, VIEW_PERFORMANCE_REPORTS_AEC
 )
+from tunnel import tunnel_aberto
 from postgre import create_connection
 from dotenv import load_dotenv
 import os
@@ -40,6 +41,27 @@ def normalize(rows):
 
     return result
 
+def test_connection(host, port, database, username, password):
+    write_log("Iniciando teste de conexão do postgre...")
+    for i in range(5):
+        try:
+            conn = create_connection(host, port, database, username, password)
+            cur = conn.cursor()
+            cur.execute("""select *
+                FROM "views".performance_view
+                where data = cast(now() as date)-1
+                limit 1 """)
+            cur.fetchone()
+            cur.close()
+            conn.close()
+            write_log("Conexão funcionou, iniciando a ETL...")
+            return
+        except Exception as e:
+            write_log(f"Erro no teste de conexão número {i}, erro: {e}...")
+            time.sleep(10)
+    write_log("Todos os testes de conexão falharam, finalizando a etl.")
+    raise RuntimeError("Tunnel não abriu, ou está inconsistente.")
+
 def run_specific_range_performance(range_start, range_end, indicators_pg, indicators_sql, host, port, database, username, password, environ):
     try:
         CONN_PG = create_connection(host, port, database, username, password)
@@ -66,6 +88,15 @@ def run_specific_range_performance(range_start, range_end, indicators_pg, indica
             write_log(f"{int(fim - inicio)} segundos para processar o dia {dia} - {environ} ids {indicators_sql or ""}...")
         except Exception as e:
             write_log(f"Erro ({e}) ao processar o dia {dia} - {environ}...")
+            if "unexpectedly" in str(e):
+                write_log(f"Tunnel aberto: {tunnel_aberto()}")
+                try:
+                    CURSOR_PG.close()
+                    CONN_PG.close()
+                    CONN_PG = create_connection(host, port, database, username, password)
+                    CURSOR_PG = CONN_PG.cursor()
+                except Exception as e:
+                    write_log(f"Erro ao tentar recriar conexão que foi fechada pelo servidor: {str(e)}") 
             CURSOR_SQL.execute("""
             UPDATE dbo.LogReplicacaoRby
             SET DataFim = GETDATE(),

@@ -98,19 +98,10 @@ def disable_attribute(session, token, mes_ano, atributo):
 
     return response_disable.json()
 
-def process_pending_files(session, base_url, token):
+def process_pending_files(session, base_url, token, files):
 
-    pending_dir = Path(__file__).resolve().parent / "pendentes"
     processed_dir = Path(__file__).resolve().parent / "processados"
-
-    pending_dir.mkdir(parents=True, exist_ok=True)
     processed_dir.mkdir(parents=True, exist_ok=True)
-
-    files = sorted(pending_dir.glob("*.xls"),key=lambda file: file.name)
-
-    if not files:
-        notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " :: Nenhum arquivo pendente encontrado ::")
-        return
 
     notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + f" :: {len(files)} arquivo(s) pendente(s) encontrado(s) ::")
 
@@ -245,12 +236,22 @@ def import_file(session, base_url, file_path, token):
 
 def import_api(username, password):
     try:
-        BASE_URL = "https://api.robbyson.com"
+        pending_dir = Path(__file__).resolve().parent / "pendentes"
+    
+        pending_dir.mkdir(parents=True, exist_ok=True)
+    
+        files = sorted(pending_dir.glob("*.xls"),key=lambda file: file.name)
+    
+        if not files:
+            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " :: Nenhum arquivo pendente encontrado ::")
+            return
 
+        BASE_URL = "https://api.robbyson.com"
+        
         notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Automacao rodando, aguarde... :: ")
 
         TOKEN = None
-
+        
         session = requests.Session()
 
         with open("config_session.json", "a+") as f:
@@ -261,20 +262,24 @@ def import_api(username, password):
                 dados = {}
             TOKEN = dados.get("sessionKey", "")
 
-        print(username)
-
         if not TOKEN:
             TOKEN = get_session_key(username, password)
 
-        try:
-            search_attribute(session, TOKEN, '06/2026', 'TEST ATTRIBUTE') # to validate the session token
-            notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Token obtido do json validado com sucesso ::")
-            
-        except Exception as e:
-            if 'token' in str(e).lower() or 'session' in str(e).lower():
-                notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Token do json expirado, obtendo um novo token :: ")
-                write_log("\n:: erro_token ::\n" + str(e))
-                TOKEN = get_session_key(username, password)
+        for i in range(3):
+            write_log(f"Iniciando tentativa {i+1}/3 de obter a session key")
+            try:
+                search_attribute(session, TOKEN, '06/2026', 'TEST ATTRIBUTE') # to validate the session token
+                notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Token obtido do json validado com sucesso ::")
+                break
+                
+            except Exception as e:
+                if 'token' in str(e).lower() or 'session' in str(e).lower():
+                    notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Token do json expirado, obtendo um novo token :: ")
+                    write_log("\n:: erro_token ::\n" + str(e))
+                    TOKEN = get_session_key(username, password)
+                    break
+                else:
+                    raise
 
         headers = {
             'accept': 'application/json, text/plain, */*',
@@ -288,7 +293,7 @@ def import_api(username, password):
 
         session.headers.update(headers)
 
-        process_pending_files(session, BASE_URL, TOKEN)
+        process_pending_files(session, BASE_URL, TOKEN, files)
 
     except Exception as e:
         notify(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" :: Erro na import api: " + str(e) + " :: ")

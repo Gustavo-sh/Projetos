@@ -1,7 +1,7 @@
 from tunnel import start_tunnel, kill_existing_tunnel
 from utils import write_log
 from sqlserver import CONN_SQL, CURSOR_SQL, commit
-from etl_sync import run_specific_range_performance, run_specific_range_notificacao
+from etl_sync import run_specific_range_performance, run_specific_range_notificacao, test_connection
 from validation import exec_validation
 import os
 import sys
@@ -96,6 +96,12 @@ def executar_procedures(procedures):
 def executar_etl(tipo_etl):
 
     start_tunnel()
+
+    test_connection(os.getenv("LOCAL_HOST"),
+                    os.getenv("LOCAL_PORT"),
+                    os.getenv("POSTGRES_DATABASE"),
+                    os.getenv("POSTGRES_USER"),
+                    os.getenv("POSTGRES_PASSWORD"))
 
     nomes = {"PD15": "Performance", "PD45": "Performance", "PDVAR": "Performance", "ND15": "Notificação", "ND45": "Notificação"}
     nome = nomes.get(tipo_etl)

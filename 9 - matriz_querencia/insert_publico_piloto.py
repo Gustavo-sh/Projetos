@@ -8,20 +8,23 @@ def insert_publico_piloto():
     with pyodbc.connect(CONNECTION_STRING, autocommit=True) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            insert into publico_piloto_sistema_matriz
-            select distinct atributo, '', '', '', cast(getdate() as date) as data
-            from sistema_matriz (nolock) sm
-            where 
-                (
-                atributo like '% quinto %' or atributo like '% vivo %' or atributo like '% claro %' or atributo like '% net %'
-                or atributo like '% porto %' or atributo like '% bradesc%' or atributo like '% casas bahia %' or atributo like '% stellantis %'
-                or atributo like '% light %' or atributo like '% shopee %' or atributo like '% livelo %' or atributo like '% leapmotor %'
-                ) 
-            and periodo = dateadd(d, 1, eomonth(getdate(), -1))
+            insert into robbysonmatriz.dbo.publico_piloto_sistema_matriz
+            SELECT distinct
+                a.atributo, '', '', '', cast(getdate() as date)
+            from robbysonmatriz.dbo.hmn (nolock) h
+            left join robbysonmatriz.dbo.atributo (nolock) a on h.atributo = a.atributo
+            where produto in (select distinct produto from robbyson.dbo.produtos_piloto_sistema_matriz (nolock))
+            and a.area = 'OPERACIONAL'
             and not exists (
-                select 1 from publico_piloto_sistema_matriz pp (nolock)
-                where pp.atributo = sm.atributo
+                select 1 from robbysonmatriz.dbo.publico_piloto_sistema_matriz pp (nolock)
+                where pp.atributo = h.atributo
             )
+            and situacaohominum in ('ativo', 'treinamento')
+            and tipohierarquia = 'operação'
+            and nivelhierarquico = 'operacional'
+            and funcaorm not like 'auxiliar%'
+            and funcaorm not like 'analista%'
+            and a.atributo is not null
         """)
         conn.commit()
         cursor.close()
