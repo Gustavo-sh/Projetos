@@ -1,6 +1,8 @@
 const express = require("express");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
+const fs = require("fs");
+const path = require("path");
 
 const {
     default: makeWASocket,
@@ -15,74 +17,80 @@ app.use(express.json());
 
 let sock;
 
+const LOG_FILE = path.join(__dirname, "bot.log");
+
+function log(message, error = null) {
+
+    const timestamp = new Date().toLocaleString("pt-BR");
+
+    let texto = `[${timestamp}] ${message}`;
+
+    if (error) {
+        texto += `\n${error.stack || error.message || error}`;
+    }
+
+    fs.appendFileSync(LOG_FILE, texto + "\n");
+}
+
 async function iniciarWhatsapp() {
 
-    const { state, saveCreds } =
-        await useMultiFileAuthState("./auth");
+    try {
 
-    const { version } =
-        await fetchLatestBaileysVersion();
+        const { state, saveCreds } =
+            await useMultiFileAuthState("./auth");
 
-    sock = makeWASocket({
-        version,
-        auth: state,
-        logger: pino({ level: "silent" })
-    });
+        const { version } =
+            await fetchLatestBaileysVersion();
 
-    sock.ev.on("creds.update", saveCreds);
+        sock = makeWASocket({
+            version,
+            auth: state,
+            logger: pino({ level: "silent" })
+        });
 
-    sock.ev.on("connection.update", (update) => {
+        sock.ev.on("creds.update", saveCreds);
 
-        const { connection, qr, lastDisconnect } = update;
+        sock.ev.on("connection.update", (update) => {
 
-        if (qr) {
-            qrcode.generate(qr, { small: true });
-        }
+            const { connection, qr, lastDisconnect } = update;
 
-        if (connection === "open") {
-            console.log("WHATSAPP CONECTADO");
-        }
-
-        if (connection === "close") {
-
-            const shouldReconnect =
-                lastDisconnect?.error?.output?.statusCode !==
-                DisconnectReason.loggedOut;
-
-            if (shouldReconnect) {
-                iniciarWhatsapp();
+            if (qr) {
+                qrcode.generate(qr, { small: true });
+                log("QR Code gerado. Autenticação necessária.");
             }
-        }
-    });
 
-    sock.ev.on("messages.upsert", async ({ messages }) => {
+            if (connection === "open") {
+                log("WhatsApp conectado.");
+            }
 
-        const msg = messages[0];
+            if (connection === "close") {
 
-        if (!msg.key.fromMe) {
-            return;
-        }
+                const shouldReconnect =
+                    lastDisconnect?.error?.output?.statusCode !==
+                    DisconnectReason.loggedOut;
 
-        if (!msg.message) {
-            return;
-        }
+                log(
+                    shouldReconnect
+                        ? "WhatsApp desconectado. Tentando reconectar em 5 segundos."
+                        : "WhatsApp desconectado. Sessão encerrada."
+                );
 
-        const numero = msg.key.remoteJid;
+                if (shouldReconnect) {
+                    setTimeout(() => {
+                        iniciarWhatsapp();
+                    }, 5000);
+                }
+            }
+        });
 
-        const texto =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text;
+    } catch (erro) {
 
-        console.log(numero);
-        console.log(texto);
+        log("Erro ao iniciar WhatsApp.", erro);
 
-        if (texto === "ping") {
-
-            await sock.sendMessage(numero, {
-                text: "pong"
-            });
-        }
-    });
+        setTimeout(() => {
+            iniciarWhatsapp();
+        }, 5000);
+    }
 }
 
 app.post("/send", async (req, res) => {
@@ -99,7 +107,7 @@ app.post("/send", async (req, res) => {
 
     } catch (erro) {
 
-        console.error(erro);
+        log("Erro ao enviar mensagem.", erro);
 
         res.status(500).json({
             status: "erro",
@@ -109,7 +117,7 @@ app.post("/send", async (req, res) => {
 });
 
 app.listen(3000, () => {
-    console.log("API iniciada");
+    log("API iniciada na porta 3000.");
 });
 
 iniciarWhatsapp();
