@@ -46,16 +46,18 @@ def test_connection(host, port, database, username, password):
     for i in range(5):
         try:
             conn = create_connection(host, port, database, username, password)
+            write_log("Conexão criada...") #adicionado apos os logs
             cur = conn.cursor()
+            write_log("Cursor criado...") #adicionado apos os logs
             cur.execute("""select *
                 FROM "views".performance_view
                 where data = cast(now() as date)-1
                 limit 1 """)
+            write_log("Query executada...") #adicionado apos os logs
             cur.fetchone()
-            cur.close()
-            conn.close()
-            write_log("Conexão funcionou, iniciando a ETL...")
-            return
+            write_log("Fetchone executado...") #adicionado apos os logs
+            write_log("Conexão funcionou, prosseguindo...")
+            return conn, cur
         except Exception as e:
             write_log(f"Erro no teste de conexão número {i}, erro: {e}...")
             time.sleep(10)
@@ -64,8 +66,9 @@ def test_connection(host, port, database, username, password):
 
 def run_specific_range_performance(range_start, range_end, indicators_pg, indicators_sql, host, port, database, username, password, environ):
     try:
-        CONN_PG = create_connection(host, port, database, username, password)
-        CURSOR_PG = CONN_PG.cursor()
+        # CONN_PG = create_connection(host, port, database, username, password)
+        # CURSOR_PG = CONN_PG.cursor()
+        CONN_PG, CURSOR_PG = test_connection(host, port, database, username, password)
     except Exception as e:
         write_log(f"Erro ao criar conexão postgre: {str(e)} - {environ}...")
         return

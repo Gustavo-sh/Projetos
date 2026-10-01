@@ -14,17 +14,20 @@ def insert_publico_piloto():
             from robbysonmatriz.dbo.hmn (nolock) h
             left join robbysonmatriz.dbo.atributo (nolock) a on h.atributo = a.atributo
             where produto in (select distinct produto from robbyson.dbo.produtos_piloto_sistema_matriz (nolock))
-            and a.area = 'OPERACIONAL'
-            and not exists (
-                select 1 from robbysonmatriz.dbo.publico_piloto_sistema_matriz pp (nolock)
-                where pp.atributo = h.atributo
-            )
             and situacaohominum in ('ativo', 'treinamento')
             and tipohierarquia = 'operação'
             and nivelhierarquico = 'operacional'
             and funcaorm not like 'auxiliar%'
             and funcaorm not like 'analista%'
             and a.atributo is not null
+            and not exists (
+                select 1 from robbysonmatriz.dbo.publico_piloto_sistema_matriz pp (nolock)
+                where pp.atributo = h.atributo
+            )
+            and not exists (
+                select 1 from robbysonmatriz.dbo.atributos_sem_matriz asm (nolock)
+                where asm.atributo = h.atributo
+            )
         """)
         conn.commit()
         cursor.close()

@@ -28,11 +28,11 @@ def validation_aec():
     group by data, id_indicador
     """
 
-    write_log("Iniciando Validation AeC -60...")
+    write_log("Iniciando Validation AeC -50...")
 
     try:
 
-        for offset in range(97, 0, -1):
+        for offset in range(50, 0, -1):
             dia = None
             try:
                 write_log(f"Offset Validation: {offset} - AEC...")
@@ -81,11 +81,11 @@ def validation_santander():
     group by data, id_indicador
     """
 
-    write_log("Iniciando Validation Santander -60...")
+    write_log("Iniciando Validation Santander -50...")
 
     try: 
 
-        for offset in range(97, 0, -1):
+        for offset in range(50, 0, -1):
             dia = None
             try:
                 write_log(f"Offset Validation: {offset} - Santander...")
@@ -113,7 +113,7 @@ def validation_santander():
 
 def exec_validation():
     try:
-        CURSOR_SQL.execute("""insert into dbo.Historicos_Procedures values('Validation_Performance_Python', GETDATE(), null, 'Validation Performance', 'D60')""")
+        CURSOR_SQL.execute("""insert into dbo.Historicos_Procedures values('Validation_Performance_Python', GETDATE(), null, 'Validation Performance', 'D50')""")
         CURSOR_SQL.execute("truncate table rby.performance_validation")
         commit()
         try:
